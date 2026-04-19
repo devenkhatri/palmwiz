@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import Image from "next/image";
 
 type PalmType = "fire" | "earth" | "air" | "water";
 
