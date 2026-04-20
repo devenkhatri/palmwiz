@@ -4,23 +4,39 @@ An ancient palmistry reading web app powered by AI. Upload your palm photo and d
 
 ## Features
 
-- **Photo Upload**: Drag & drop or click to upload palm photos (JPEG, PNG, WebP)
-- **AI-Powered Readings**: Uses OpenRouter AI to generate personalized palm readings
-- **7-Tab Reading System**:
-  - Overview - Your palm type and true nature
-  - Major Lines - Life, Heart, Head, and Fate lines
-  - Mounts - The seven mounts of the palm
-  - Fingers - What your fingers reveal
-  - Signs & Marks - Special markings
-  - Career - Professional insights
-  - Love - Relationship guidance
+### Core Features
 
-## Palm Types
+- **Photo Upload**: Drag & drop or click to upload palm photos (JPEG, PNG, WebP)
+- **Mobile Camera**: Take photos directly on mobile devices
+- **AI-Powered Readings**: Uses OpenRouter AI to generate personalized palm readings
+- **Local Fallback Algorithm**: Classic reading algorithm when AI is unavailable
+
+### Reading System (7 Tabs)
+
+| Tab | Description | Access |
+|-----|-------------|--------|
+| Overview | Your palm type and true nature | Free |
+| Major Lines | Life, Heart, Head, and Fate lines | Email unlock |
+| Mounts | The seven mounts of the palm | Email unlock |
+| Fingers | What your fingers reveal | Email unlock |
+| Signs & Marks | Special markings on your palm | Email unlock |
+| Career | Professional insights | Email unlock |
+| Love | Relationship guidance | Email unlock |
+
+### Palm Types
 
 - 🔥 **Fire** - Bold, passionate, natural-born leaders
 - 🌍 **Earth** - Practical, reliable, grounded
 - 💨 **Air** - Intellectual, analytical, curious
 - 💧 **Water** - Intuitive, creative, emotional
+
+### Additional Features
+
+- **Compatibility Reading**: Compare two palms to see relationship compatibility
+- **Shareable Links**: Share your reading via unique URL
+- **PDF Export**: Save your reading as PDF
+- **Credit System**: Free credits for anonymous users, more with email
+- **Payment Integration**: Razorpay for purchasing credits
 
 ## Setup
 
@@ -40,11 +56,29 @@ bun install
 Create a `.env.local` file in the root directory:
 
 ```env
+# Required: OpenRouter AI for palm readings
 OPENROUTER_API_KEY=your-openrouter-api-key
-OPENROUTER_MODEL=openrouter/free
+OPENROUTER_MODEL=google/gemini-flash-1.5-8b
+
+# Optional: Supabase for storing readings (for shareable links)
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Optional: Razorpay for payments
+RAZORPAY_KEY_ID=your-razorpay-key-id
+RAZORPAY_KEY_SECRET=your-razorpay-key-secret
 ```
 
 Get your free API key at https://openrouter.ai/
+
+### Database Setup
+
+If using Supabase for shareable reading links:
+
+1. Create a Supabase project at https://supabase.com
+2. Run the schema in `supabase-schema.sql` via Supabase SQL editor
+3. Add the environment variables above
 
 ### Development
 
@@ -69,11 +103,33 @@ bun run typecheck
 
 ## Tech Stack
 
-- Next.js 16
+- Next.js 16 (App Router)
 - React 19
 - TypeScript
 - Tailwind CSS 4
-- OpenRouter AI (vision model)
+- OpenRouter AI (vision model for palm analysis)
+- Supabase (database for shareable readings)
+- Razorpay (payment processing)
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── page.tsx           # Main reading page
+│   ├── compatibility/     # Compatibility reading page
+│   ├── reading/[token]/   # Shared reading page
+│   └── api/
+│       ├── palm-read/    # AI palm reading API
+│       ├── readings/save # Save reading to DB
+│       └── razorpay/     # Payment APIs
+├── components/
+│   ├── EmailGateModal.tsx # Email unlock modal
+│   └── PaywallModal.tsx  # Payment modal
+└── lib/
+    ├── credits.ts         # Credit system
+    └── supabase.ts       # Supabase client
+```
 
 ## License
 
