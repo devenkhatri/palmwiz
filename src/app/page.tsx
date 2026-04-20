@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import EmailGateModal from "@/components/EmailGateModal";
 import PaywallModal   from "@/components/PaywallModal";
+import Testimonials   from "@/components/Testimonials";
 import {
   loadCredits, consumeCredit, addCredits, unlockWithEmail,
   type CreditState,
@@ -681,6 +682,9 @@ export default function Home() {
         </div>
         <div className="mt-8 md:mt-16 text-7xl md:text-9xl opacity-20 animate-pulse">🖐️</div>
       </section>
+
+      {/* Testimonials Section */}
+      <Testimonials />
 
       {/* ── Upload Section ─────────────────────────────────────── */}
       <section id="upload-section" className="relative py-12 md:py-20 px-4 md:px-6 no-print">
