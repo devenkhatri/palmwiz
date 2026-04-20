@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import EmailGateModal from "@/components/EmailGateModal";
 import PaywallModal   from "@/components/PaywallModal";
 import Testimonials   from "@/components/Testimonials";
+import Link from "next/link";
 import {
   loadCredits, consumeCredit, addCredits, unlockWithEmail,
   type CreditState,
@@ -641,6 +642,10 @@ export default function Home() {
             {reading && !isProcessing && (
               <button onClick={reset} className="btn-secondary text-xs py-1.5 px-3 md:text-sm md:py-2 md:px-5">New</button>
             )}
+            <nav className="hidden md:flex items-center gap-2 ml-2">
+              <Link href="/tarot" className="text-xs text-text-secondary hover:text-highlight transition-colors px-2 py-1">Tarot</Link>
+              <Link href="/numerology" className="text-xs text-text-secondary hover:text-highlight transition-colors px-2 py-1">Numerology</Link>
+            </nav>
           </div>
         </div>
       </header>

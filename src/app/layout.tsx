@@ -21,8 +21,33 @@ const raleway = Raleway({
 });
 
 export const metadata: Metadata = {
-  title: "PalmWis - Palm Reading App",
-  description: "Discover your destiny written in your palm",
+  metadataBase: new URL("https://palmwis.app"),
+  title: {
+    default: "PalmWis - AI Palm Reading",
+    template: "%s | PalmWis",
+  },
+  description: "Ancient palmistry wisdom meets AI. Upload your palm photo and discover what your hands reveal about your personality, career, and love life.",
+  keywords: ["palm reading", "palmistry", "hand reading", "fortune telling", "AI reading"],
+  authors: [{ name: "PalmWis" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://palmwis.app",
+    siteName: "PalmWis",
+    title: "PalmWis - AI Palm Reading",
+    description: "Ancient palmistry wisdom meets AI. Upload your palm photo and discover your destiny.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PalmWis - AI Palm Reading",
+    description: "Ancient palmistry wisdom meets AI. Upload your palm photo and discover your destiny.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -35,6 +60,18 @@ export default function RootLayout({
       <body
         className={`${cinzelDecorative.variable} ${cinzel.variable} ${raleway.variable} antialiased`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "PalmWis",
+              url: "https://palmwis.app",
+              description: "AI-powered palm reading service",
+            }),
+          }}
+        />
         {children}
       </body>
     </html>
