@@ -617,7 +617,7 @@ export default function Home() {
             {/* Credit badge (Phase 3 #13) */}
             <div
               onClick={() => setShowPaywall(true)}
-              className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-colors hover:scale-105
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-colors hover:scale-105
                 ${
                   creditState.credits === 0
                     ? "border-[#e94560]/60 bg-[#e94560]/10 text-[#e94560] hover:bg-[#e94560]/20"
