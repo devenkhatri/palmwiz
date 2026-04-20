@@ -41,9 +41,16 @@ type TarotReading = {
 export default function TarotPage() {
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [reading, setReading] = useState<TarotReading | null>(null);
   const [creditState, setCreditState] = useState<CreditState>({ credits: 1, email: null, unlocked: false });
   const [error, setError] = useState("");
+
+  const progressLabel =
+    progress < 30 ? "Shuffling the deck..." :
+    progress < 60 ? "Drawing your cards..." :
+    progress < 85 ? "Reading the symbols..." :
+    "Revealing your destiny...";
 
   const selectCard = (cardName: string) => {
     if (selectedCards.includes(cardName)) {
@@ -68,6 +75,17 @@ export default function TarotPage() {
     setCreditState(nextCredits);
     setIsProcessing(true);
     setError("");
+    setProgress(0);
+
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return 90;
+        }
+        return prev + Math.random() * 15;
+      });
+    }, 300);
 
     try {
       const response = await fetch("/api/tarot-read", {
@@ -78,15 +96,21 @@ export default function TarotPage() {
 
       const data = await response.json();
 
+      clearInterval(interval);
+      setProgress(100);
+
       if (!response.ok || data.error) {
         setError(data.error || "Failed to generate reading");
         setIsProcessing(false);
+        setProgress(0);
         return;
       }
 
       setReading(data.reading);
     } catch {
       setError("Failed to generate reading");
+      setIsProcessing(false);
+      setProgress(0);
     }
 
     setIsProcessing(false);
@@ -152,7 +176,7 @@ export default function TarotPage() {
               })}
             </div>
 
-            {selectedCards.length > 0 && (
+            {selectedCards.length > 0 && !isProcessing && (
               <div className="text-center mb-6">
                 <p className="text-text-secondary text-sm mb-3">
                   Selected: {selectedCards.join(", ")}
@@ -162,9 +186,21 @@ export default function TarotPage() {
                   disabled={isProcessing}
                   className="btn-primary"
                 >
-                  {isProcessing ? "Reading..." : `🔮 Reveal My Destiny`}
+                  🔮 Reveal My Destiny
                 </button>
                 {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
+              </div>
+            )}
+
+            {isProcessing && (
+              <div className="text-center mb-6">
+                <div className="w-full max-w-md mx-auto bg-[#16213e] rounded-full h-3 overflow-hidden mb-3">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#e94560] to-[#f5c518] transition-all duration-300 rounded-full"
+                    style={{ width: `${Math.min(progress, 100)}%` }}
+                  />
+                </div>
+                <p className="text-text-secondary text-sm">{progressLabel}</p>
               </div>
             )}
           </div>

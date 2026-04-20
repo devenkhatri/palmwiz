@@ -21,9 +21,16 @@ export default function NumerologyPage() {
   const [name, setName] = useState("");
   const [dob, setDob] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [reading, setReading] = useState<NumerologyReading | null>(null);
   const [creditState, setCreditState] = useState<CreditState>({ credits: 1, email: null, unlocked: false });
   const [error, setError] = useState("");
+
+  const progressLabel =
+    progress < 30 ? "Calculating your numbers..." :
+    progress < 60 ? "Analyzing numerological patterns..." :
+    progress < 85 ? "Interpreting the cosmic codes..." :
+    "Revealing your destiny...";
 
   const analyzeNumerology = async () => {
     if (!name.trim() || !dob) {
@@ -40,6 +47,17 @@ export default function NumerologyPage() {
     setCreditState(nextCredits);
     setIsProcessing(true);
     setError("");
+    setProgress(0);
+
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return 90;
+        }
+        return prev + Math.random() * 15;
+      });
+    }, 300);
 
     try {
       const response = await fetch("/api/numerology-read", {
@@ -50,15 +68,21 @@ export default function NumerologyPage() {
 
       const data = await response.json();
 
+      clearInterval(interval);
+      setProgress(100);
+
       if (!response.ok || data.error) {
         setError(data.error || "Failed to generate reading");
         setIsProcessing(false);
+        setProgress(0);
         return;
       }
 
       setReading(data.reading);
     } catch {
+      clearInterval(interval);
       setError("Failed to generate reading");
+      setProgress(0);
     }
 
     setIsProcessing(false);
@@ -133,13 +157,27 @@ export default function NumerologyPage() {
 
               {error && <p className="text-red-400 text-sm">{error}</p>}
 
-              <button
-                onClick={analyzeNumerology}
-                disabled={isProcessing}
-                className="btn-primary w-full"
-              >
-                {isProcessing ? "Calculating..." : "🔮 Reveal My Numbers"}
-              </button>
+              {!isProcessing && (
+                <button
+                  onClick={analyzeNumerology}
+                  disabled={isProcessing}
+                  className="btn-primary w-full"
+                >
+                  🔮 Reveal My Numbers
+                </button>
+              )}
+
+              {isProcessing && (
+                <div className="space-y-3">
+                  <div className="w-full bg-[#16213e] rounded-full h-3 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#e94560] to-[#f5c518] transition-all duration-300 rounded-full"
+                      style={{ width: `${Math.min(progress, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-text-secondary text-sm text-center">{progressLabel}</p>
+                </div>
+              )}
             </div>
           </div>
         ) : (
