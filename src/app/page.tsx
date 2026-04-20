@@ -2,6 +2,10 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 
+// ─────────────────────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────────────────────
+
 type PalmType = "fire" | "earth" | "air" | "water";
 
 interface Reading {
@@ -15,21 +19,32 @@ interface Reading {
   love: string;
 }
 
+interface ToastItem {
+  id: string;
+  message: string;
+  type: "error" | "success" | "info";
+}
+
+// ─────────────────────────────────────────────────────────────
+// LOCAL FALLBACK ALGORITHM
+// ─────────────────────────────────────────────────────────────
+
+// FIX #2: Seed now uses file.size + file.lastModified (real data, not empty File)
 function generateSeedFromImage(file: File): number {
-  return file.size + file.name.length + Date.now();
+  return file.size + file.name.length + Math.floor(file.lastModified / 1000);
 }
 
 function seededRandom(seed: number): () => number {
+  let s = seed;
   return () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return seed / 0x7fffffff;
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    return s / 0x7fffffff;
   };
 }
 
 function getPalmType(seed: number): PalmType {
   const types: PalmType[] = ["fire", "earth", "air", "water"];
-  const random = seededRandom(seed);
-  return types[Math.floor(random() * 4)];
+  return types[Math.floor(seededRandom(seed)() * 4)];
 }
 
 function generateReading(seed: number): Reading {
@@ -39,161 +54,85 @@ function generateReading(seed: number): Reading {
   const types: Record<PalmType, { overview: string; traits: string[] }> = {
     fire: {
       overview: "You have a Fire palm, which means you're a natural-born leader with boundless energy and enthusiasm. Your palms show strong qi (life force) flowing through them, indicating a vibrant personality that lights up every room you enter.",
-      traits: ["Bold", "spontaneous", "passionate", "energetic", "courageous"]
+      traits: ["Bold", "spontaneous", "passionate", "energetic", "courageous"],
     },
     earth: {
       overview: "You have an Earth palm, suggesting you're practical, reliable, and grounded. Your strong line structure shows someone who builds lasting foundations and values security above all else.",
-      traits: ["Practical", "reliable", "patient", "determined", "sensible"]
+      traits: ["Practical", "reliable", "patient", "determined", "sensible"],
     },
     air: {
       overview: "You have an Air palm, revealing an intellectual, analytical mind. Your palm lines show complex thinking patterns and a natural curiosity about the world around you.",
-      traits: ["Curious", "analytical", "social", "communicative", "inventive"]
+      traits: ["Curious", "analytical", "social", "communicative", "inventive"],
     },
     water: {
       overview: "You have a Water palm, indicating a highly intuitive and emotional nature. Your palm shows deep sensitivity and creative potential, with feelings that run deep like the oceans.",
-      traits: ["Intuitive", "creative", "emotional", "adaptable", "artistic"]
-    }
+      traits: ["Intuitive", "creative", "emotional", "adaptable", "artistic"],
+    },
   };
 
   const type = types[palmType];
-
-  const traits = type.traits.sort(() => random() - 0.5).slice(0, 3);
+  const traits = [...type.traits].sort(() => random() - 0.5).slice(0, 3);
 
   const lifeLineMeanings = [
     "Your Life Line starts strong and curves gently, suggesting robust health and vitality throughout your life. You have good natural defenses against illness.",
     "The Life Line shows some breaks, indicating you've faced or will face significant transformations. These changes, while challenging, ultimately strengthen your character.",
     "A deep and well-defined Life Line speaks of physical strength and the will to live fully. You likely have plenty of energy to pursue your dreams.",
-    "The Life Line wraps closely around the thumb, meaning you're someone who values independence and personal freedom above comfort."
+    "The Life Line wraps closely around the thumb, meaning you're someone who values independence and personal freedom above comfort.",
   ];
-
   const heartLineMeanings = [
     "Your Heart Line starts under the index finger, suggesting you approach love with logic and caution. You're loyal once committed, but take time to open up emotionally.",
     "A Heart Line that reaches all the way to the index finger indicates a passionate nature. You love deeply and aren't afraid to show your emotions.",
     "The Heart Line is straight and shallow, showing you keep emotional distance. You prefer practical displays of affection over dramatic expressions.",
-    "Your Heart Line has a fork at the end, suggesting emotional balance - you can balance personal needs with your partner's needs."
+    "Your Heart Line has a fork at the end, suggesting emotional balance — you can balance personal needs with your partner's needs.",
   ];
-
   const headLineMeanings = [
     "Your Head Line is long and well-defined, showing strong analytical abilities. You're a logical thinker who considers all angles before making decisions.",
-    "A slightly curved Head Line indicates creative thinking. You don't just see facts - you see possibilities and connections others miss.",
+    "A slightly curved Head Line indicates creative thinking. You don't just see facts — you see possibilities and connections others miss.",
     "The Head Line starts separate from the Life Line, showing independent thinking. You form your own opinions and aren't easily influenced by others.",
-    "A forked Head Line suggests versatile thinking - you can approach problems from multiple angles simultaneously."
+    "A forked Head Line suggests versatile thinking — you can approach problems from multiple angles simultaneously.",
   ];
-
   const fateLineMeanings = [
-    "A visible Fate Line shows you're someone who shapes their own destiny. You're not just carried by life - you steer your own course.",
+    "A visible Fate Line shows you're someone who shapes their own destiny. You're not just carried by life — you steer your own course.",
     "Your Fate Line is faint or broken, suggesting an adaptable life path. You're flexible and can succeed in various circumstances.",
-    "No strong Fate Line means you're free to create your own path without predetermined constraints. This is freedom, not limitation."
+    "No strong Fate Line means you're free to create your own path without predetermined constraints. This is freedom, not limitation.",
   ];
 
   const mounts = [
-    {
-      name: "Mount of Venus",
-      content: "Well-developed and plump, indicating natural charm and magnetic personality. You attract others with your warmth and generosity.",
-      meaning: "This means you're naturally lovable and have an easy time forming relationships. Your presence brings joy to others."
-    },
-    {
-      name: "Mount of Jupiter",
-      content: "Prominent and strong, showing natural leadership abilities. You have the ambition and confidence to take charge when needed.",
-      meaning: "You're destined for roles where you can lead and inspire others. Success comes naturally to you in positions of authority."
-    },
-    {
-      name: "Mount of Saturn",
-      content: "Well-defined, indicating wisdom beyond your years. You have a mature outlook and value responsibility.",
-      meaning: "You bring stability to any situation. Others look to you for guidance because you think before acting."
-    },
-    {
-      name: "Mount of Mercury",
-      content: "Showing good development, suggesting strong communication skills and business acumen. Your words carry weight.",
-      meaning: "You have the gift of persuasion. Careers in communication, sales, or teaching suit you well."
-    },
-    {
-      name: "Upper Mars",
-      content: "Strong andwell-defined, showing courage and fighting spirit. You don't back down from challenges.",
-      meaning: "You have the bravery to face any obstacle. Others can count on you in difficult times."
-    },
-    {
-      name: "Lower Mars",
-      content: "Well-developed, indicating persistence and determination. When you start something, you see it through.",
-      meaning: "Your determination is unmatched. Setbacks don't stop you - they make you more determined to succeed."
-    },
-    {
-      name: "Mount of Moon",
-      content: "Showing good development, indicating imagination and intuition. You have rich inner worlds and creative potential.",
-      meaning: "Your intuition is strong. Trust your gut feelings - they're often right. Creative pursuits could bring you joy."
-    }
+    { name: "Mount of Venus", content: "Well-developed and plump, indicating natural charm and magnetic personality.", meaning: "You're naturally lovable and have an easy time forming relationships." },
+    { name: "Mount of Jupiter", content: "Prominent and strong, showing natural leadership abilities.", meaning: "You're destined for roles where you can lead and inspire others." },
+    { name: "Mount of Saturn", content: "Well-defined, indicating wisdom beyond your years.", meaning: "You bring stability to any situation and others look to you for guidance." },
+    { name: "Mount of Mercury", content: "Showing good development, suggesting strong communication skills.", meaning: "You have the gift of persuasion — careers in communication suit you well." },
+    { name: "Upper Mars", content: "Strong and well-defined, showing courage and fighting spirit.", meaning: "You have the bravery to face any obstacle." },
+    { name: "Lower Mars", content: "Well-developed, indicating persistence and determination.", meaning: "Your determination is unmatched — setbacks make you more driven." },
+    { name: "Mount of Moon", content: "Showing good development, indicating imagination and intuition.", meaning: "Your intuition is strong. Trust your gut feelings — they're often right." },
   ];
-
   const fingers = [
-    {
-      name: "Index Finger (Jupiter)",
-      content: "Longer than average, showing strong ambition and desire for recognition. You want to achieve and be acknowledged for it.",
-      meaning: "You're driven by success and status. Channel this into meaningful goals and you'll go far."
-    },
-    {
-      name: "Middle Finger (Saturn)",
-      content: "Well-proportioned, indicating balanced sense of responsibility. You know when to work and when to play.",
-      meaning: "You have natural self-discipline. This helps you stay on track toward your long-term goals."
-    },
-    {
-      name: "Ring Finger (Apollo)",
-      content: "Prominent, showing appreciation for beauty and creativity. You have artistic tendencies, whether expressed or not.",
-      meaning: "Beauty matters to you. Whether through art, style, or environment, you need creative expression in your life."
-    },
-    {
-      name: "Little Finger (Mercury)",
-      content: "Well-developed, suggesting strong communication skills. You're articulate and can express yourself clearly.",
-      meaning: "Communication is your strength. Use this gift in careers that involve writing, speaking, or teaching."
-    },
-    {
-      name: "Thumb",
-      content: "Strong and well-angled, showing good willpower and determination. You know your own mind.",
-      meaning: "You have the strength of character to stand by your convictions. Others respect your resolve."
-    }
+    { name: "Index Finger (Jupiter)", content: "Longer than average, showing strong ambition and desire for recognition.", meaning: "You're driven by success and status. Channel this into meaningful goals." },
+    { name: "Middle Finger (Saturn)", content: "Well-proportioned, indicating balanced sense of responsibility.", meaning: "You have natural self-discipline that helps you stay on track." },
+    { name: "Ring Finger (Apollo)", content: "Prominent, showing appreciation for beauty and creativity.", meaning: "Beauty matters to you — creative expression is a need, not a luxury." },
+    { name: "Little Finger (Mercury)", content: "Well-developed, suggesting strong communication skills.", meaning: "Communication is your strength. Use it in writing, speaking, or teaching." },
+    { name: "Thumb", content: "Strong and well-angled, showing good willpower and determination.", meaning: "You have the strength of character to stand by your convictions." },
   ];
-
   const signs = [
-    {
-      name: "Star Mark",
-      content: "A rare star marking present on your palm, indicating potential for distinction in your field. This is a mark of achievement.",
-      meaning: "You're capable of extraordinary things. This mark suggests you have the potential to excel in ways others don't."
-    },
-    {
-      name: "Triangle",
-      content: "A clear triangle formation in your palm, indicating wisdom and the ability to combine knowledge effectively.",
-      meaning: "You have the mental capacity to synthesize information and create solutions. Your mind is your greatest asset."
-    },
-    {
-      name: "Circle (Ring)",
-      content: "A ring marking visible, suggesting a self-contained nature. You have inner resources that sustain you.",
-      meaning: "You don't need external validation. You have everything you need within yourself to succeed."
-    },
-    {
-      name: "Cross Mark",
-      content: "A cross marking present, indicating moments of decision or change. These are opportunities for growth.",
-      meaning: "Challenges you face are actually turning points. Each cross marks a moment where you can level up."
-    },
-    {
-      name: "Island",
-      content: "An island marking visible, indicating a period of transformation or learning. This represents a journey of self-discovery.",
-      meaning: "You're in or approaching a transformative phase. Embrace it - you emerge stronger on the other side."
-    }
+    { name: "Star Mark", content: "A rare star marking present on your palm, indicating potential for distinction.", meaning: "You're capable of extraordinary things in your field." },
+    { name: "Triangle", content: "A clear triangle formation in your palm, indicating wisdom.", meaning: "Your mind is your greatest asset — you synthesize information brilliantly." },
+    { name: "Circle (Ring)", content: "A ring marking visible, suggesting a self-contained nature.", meaning: "You don't need external validation — you have everything within yourself." },
+    { name: "Cross Mark", content: "A cross marking present, indicating moments of decision or change.", meaning: "Challenges you face are actually turning points — embrace them." },
+    { name: "Island", content: "An island marking visible, indicating a period of transformation.", meaning: "You're in or approaching a transformative phase. You emerge stronger." },
   ];
-
   const careerTraits = [
     "Your strong finger definition suggests success in fields that require communication. Teaching, writing, or sales could be fulfilling.",
     "The mounts of your palm indicate natural leadership abilities. Management or entrepreneurial roles play to your strengths.",
     "Your creative mount development suggests an artistic streak. Consider careers that allow creative expression.",
     "Your analytical Head Line points to success in technical or scientific fields where logic is prized.",
-    "Your well-developed Mercury mount suggests business acumen. Entrepreneurship or finance could be natural fits."
+    "Your well-developed Mercury mount suggests business acumen. Entrepreneurship or finance could be natural fits.",
   ];
-
   const loveTraits = [
     "Your Heart Line suggests you need a partner who respects your independence. Clinginess is a red flag for you.",
     "The shape of your Mount of Venus indicates you attract partners easily. Your natural charm works in your favor.",
     "Your approach to love is practical but deep. You don't show off, but when you love, you love completely.",
     "You seek a partner who can match your intellectual energy. Conversation and mental connection are important to you.",
-    "Your emotional nature means you feel deeply in relationships. Partner with someone who appreciates your depth."
+    "Your emotional nature means you feel deeply in relationships. Partner with someone who appreciates your depth.",
   ];
 
   const mountCount = Math.floor(random() * 3) + 5;
@@ -207,85 +146,185 @@ function generateReading(seed: number): Reading {
       { title: "Life Line", content: lifeLineMeanings[Math.floor(random() * lifeLineMeanings.length)], meaning: traits[0] },
       { title: "Heart Line", content: heartLineMeanings[Math.floor(random() * heartLineMeanings.length)], meaning: traits[1] },
       { title: "Head Line", content: headLineMeanings[Math.floor(random() * headLineMeanings.length)], meaning: traits[2] },
-      { title: "Fate Line", content: fateLineMeanings[Math.floor(random() * fateLineMeanings.length)], meaning: "Your approach to success" }
+      { title: "Fate Line", content: fateLineMeanings[Math.floor(random() * fateLineMeanings.length)], meaning: "Your approach to success" },
     ],
-    mounts: mounts.sort(() => random() - 0.5).slice(0, mountCount),
-    fingers: fingers.sort(() => random() - 0.5).slice(0, fingerCount),
-    signs: signs.sort(() => random() - 0.5).slice(0, signCount),
+    mounts: [...mounts].sort(() => random() - 0.5).slice(0, mountCount),
+    fingers: [...fingers].sort(() => random() - 0.5).slice(0, fingerCount),
+    signs: [...signs].sort(() => random() - 0.5).slice(0, signCount),
     career: careerTraits[Math.floor(random() * careerTraits.length)],
-    love: loveTraits[Math.floor(random() * loveTraits.length)]
+    love: loveTraits[Math.floor(random() * loveTraits.length)],
   };
 }
+
+// ─────────────────────────────────────────────────────────────
+// TOAST COMPONENT
+// ─────────────────────────────────────────────────────────────
+
+function ToastContainer({ toasts, onRemove }: { toasts: ToastItem[]; onRemove: (id: string) => void }) {
+  return (
+    <div className="fixed top-4 right-4 z-[200] flex flex-col gap-3 no-print pointer-events-none" aria-live="polite">
+      {toasts.map(toast => (
+        <div
+          key={toast.id}
+          className={`toast toast-${toast.type} pointer-events-auto`}
+          onClick={() => onRemove(toast.id)}
+          role="alert"
+        >
+          <span className="text-base flex-shrink-0">
+            {toast.type === "error" ? "⚠️" : toast.type === "success" ? "✅" : "ℹ️"}
+          </span>
+          <p className="text-sm leading-snug flex-1">{toast.message}</p>
+          <button aria-label="Dismiss" className="ml-1 opacity-60 hover:opacity-100 text-xs flex-shrink-0">✕</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// PHOTO GUIDE MODAL (Phase 2 #5)
+// ─────────────────────────────────────────────────────────────
+
+function PhotoGuideModal({ onClose }: { onClose: () => void }) {
+  const tips = [
+    { icon: "✋", tip: "Use your dominant hand (right if right-handed)" },
+    { icon: "🤚", tip: "Hold your hand flat with fingers slightly spread open" },
+    { icon: "☀️", tip: "Shoot in natural daylight or bright indoor light" },
+    { icon: "🔦", tip: "Face towards the light — avoid shadows across the palm" },
+    { icon: "📐", tip: "Hold camera 6–12 inches directly above your palm" },
+    { icon: "🎯", tip: "Make sure all major palm lines are clearly in focus" },
+  ];
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm no-print"
+      onClick={onClose}
+    >
+      <div
+        className="card-mystical p-8 max-w-md w-full mx-4 glow-subtle"
+        onClick={e => e.stopPropagation()}
+      >
+        <h3 className="font-decorative text-xl text-highlight mb-6 text-center">📸 Perfect Palm Photo Guide</h3>
+        <ul className="space-y-4">
+          {tips.map(({ icon, tip }) => (
+            <li key={tip} className="flex items-start gap-3">
+              <span className="text-xl flex-shrink-0">{icon}</span>
+              <p className="text-text-secondary text-sm leading-relaxed">{tip}</p>
+            </li>
+          ))}
+        </ul>
+        <button onClick={onClose} className="btn-primary w-full mt-8">
+          Got It — Let&apos;s Read My Palm!
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// MAIN PAGE
+// ─────────────────────────────────────────────────────────────
 
 export default function Home() {
   const [image, setImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
+  const [currentFile, setCurrentFile] = useState<File | null>(null); // FIX #2
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [reading, setReading] = useState<Reading | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [dragOver, setDragOver] = useState(false);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [showPhotoGuide, setShowPhotoGuide] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = useCallback((file: File) => {
-    if (!file) return;
+  // ── Toasts ──────────────────────────────────────────────────
+  const addToast = useCallback((message: string, type: ToastItem["type"] = "info") => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 5000);
+  }, []);
 
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      alert("Please upload a valid image (JPEG, PNG, or WebP)");
-      return;
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // ── localStorage restore (Phase 2 #9) ───────────────────────
+  useEffect(() => {
+    try {
+      const savedReading = localStorage.getItem("palmwiz_reading");
+      const savedImage = localStorage.getItem("palmwiz_image");
+      const savedFileName = localStorage.getItem("palmwiz_filename");
+      if (savedReading && savedImage) {
+        setReading(JSON.parse(savedReading));
+        setImage(savedImage);
+        setFileName(savedFileName || "");
+        setProgress(100);
+        addToast("Your previous reading has been restored!", "info");
+      }
+    } catch {
+      // ignore parse / quota errors
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert("File size must be less than 10MB");
-      return;
-    }
+  // ── File handling ────────────────────────────────────────────
+  const handleFile = useCallback(
+    (file: File) => {
+      if (!file) return;
+      const validTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!validTypes.includes(file.type)) {
+        addToast("Please upload a JPEG, PNG, or WebP image", "error");
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        addToast("File size must be less than 10MB", "error");
+        return;
+      }
+      setCurrentFile(file); // FIX #2 — store actual File object
+      const reader = new FileReader();
+      reader.onload = e => {
+        setImage(e.target?.result as string);
+        setFileName(file.name);
+        setReading(null);
+        setProgress(0);
+      };
+      reader.readAsDataURL(file);
+    },
+    [addToast]
+  );
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImage(e.target?.result as string);
-      setFileName(file.name);
-    };
-    reader.readAsDataURL(file);
-  }, []);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    },
+    [handleFile]
+  );
+  const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setDragOver(true); }, []);
+  const handleDragLeave = useCallback(() => setDragOver(false), []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    handleFile(file);
-  }, [handleFile]);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    setDragOver(false);
-  }, []);
-
-  const handleClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleClick = () => fileInputRef.current?.click();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
+    e.target.value = ""; // allow re-selecting same file
   };
 
+  // ── Palm analysis — Phase 1 all fixes applied ────────────────
   const analyzePalm = async () => {
     if (!image) return;
-
     setIsProcessing(true);
     setProgress(0);
+    setReading(null);
 
     const interval = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(interval);
-          return 90;
-        }
+        if (prev >= 90) { clearInterval(interval); return 90; }
         return prev + Math.random() * 10;
       });
     }, 300);
@@ -293,13 +332,19 @@ export default function Home() {
     try {
       const response = await fetch("/api/palm-read", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image, fileName }),
       });
 
+      clearInterval(interval);
       const data = await response.json();
+
+      if (response.status === 429) {
+        addToast(data.error || "Too many readings — please try again later", "error");
+        setIsProcessing(false); // FIX #1
+        setProgress(0);
+        return;
+      }
 
       if (!response.ok || data.error) {
         throw new Error(data.error || "API unavailable");
@@ -307,27 +352,54 @@ export default function Home() {
 
       setReading(data.reading);
       setProgress(100);
+      setIsProcessing(false); // FIX #1
+
+      try {
+        localStorage.setItem("palmwiz_reading", JSON.stringify(data.reading));
+        localStorage.setItem("palmwiz_image", image);
+        localStorage.setItem("palmwiz_filename", fileName);
+      } catch { /* quota exceeded — ignore */ }
+
     } catch (error) {
+      clearInterval(interval);
       console.warn("AI unavailable, using local algorithm:", error);
-      const seed = generateSeedFromImage(new File([], fileName));
+      addToast("AI analysis unavailable — using classic reading algorithm", "info");
+
+      // FIX #2: use actual stored File for a meaningful seed
+      const seed = currentFile ? generateSeedFromImage(currentFile) : Date.now();
       const result = generateReading(seed);
+
       setReading(result);
       setProgress(100);
+      setIsProcessing(false); // FIX #1
+
+      try {
+        localStorage.setItem("palmwiz_reading", JSON.stringify(result));
+        localStorage.setItem("palmwiz_image", image);
+        localStorage.setItem("palmwiz_filename", fileName);
+      } catch { /* quota exceeded — ignore */ }
     }
   };
 
+  // ── Reset ────────────────────────────────────────────────────
   const reset = () => {
     setImage(null);
     setFileName("");
+    setCurrentFile(null);
     setReading(null);
     setProgress(0);
     setActiveTab("overview");
+    try {
+      localStorage.removeItem("palmwiz_reading");
+      localStorage.removeItem("palmwiz_image");
+      localStorage.removeItem("palmwiz_filename");
+    } catch { /* ignore */ }
   };
 
-  const scrollToUpload = () => {
+  const scrollToUpload = () =>
     document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth" });
-  };
 
+  // ── Auto-scroll (now works because isProcessing is properly cleared) ──
   useEffect(() => {
     if (!isProcessing && progress === 100 && reading) {
       setTimeout(() => {
@@ -336,30 +408,87 @@ export default function Home() {
     }
   }, [isProcessing, progress, reading]);
 
+  // ── Share / Save as PDF (Phase 2 #7) ────────────────────────
+  const printReading = () => window.print();
+
+  const shareReading = async () => {
+    if (!reading) return;
+    const palmEmoji = reading.type === "fire" ? "🔥" : reading.type === "earth" ? "🌍" : reading.type === "air" ? "💨" : "💧";
+    const text = `${palmEmoji} I just got my palm read on PalmWis!\n\nI have a ${reading.type.charAt(0).toUpperCase() + reading.type.slice(1)} palm — ${reading.overview.slice(0, 100)}...\n\nDiscover yours at palmwis.app`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "My PalmWis Reading", text, url: "https://palmwis.app" });
+      } else {
+        await navigator.clipboard.writeText(text);
+        addToast("Reading copied to clipboard! Paste it anywhere 🖐️", "success");
+      }
+    } catch {
+      addToast("Could not share — try copying manually", "error");
+    }
+  };
+
+  // ── Tabs & particles ─────────────────────────────────────────
   const tabs = [
-    { id: "overview", label: "Overview" },
-    { id: "majorLines", label: "Major Lines" },
-    { id: "mounts", label: "Mounts" },
-    { id: "fingers", label: "Fingers" },
-    { id: "signs", label: "Signs & Marks" },
-    { id: "career", label: "Career" },
-    { id: "love", label: "Love" }
+    { id: "overview",   label: "Overview"     },
+    { id: "majorLines", label: "Major Lines"  },
+    { id: "mounts",     label: "Mounts"       },
+    { id: "fingers",    label: "Fingers"      },
+    { id: "signs",      label: "Signs & Marks"},
+    { id: "career",     label: "Career"       },
+    { id: "love",       label: "Love"         },
   ];
 
-  const particles = useMemo(() => 
-    [...Array(15)].map((_, i) => ({
-      left: `${(i * 7 + 3) % 100}%`,
-      animationDelay: `${(i * 0.4)}s`,
-      animationDuration: `${5 + (i % 4)}s`,
-      width: `${2 + (i % 3)}px`,
-      height: `${2 + (i % 3)}px`
-    })), []
+  const particles = useMemo(
+    () =>
+      [...Array(15)].map((_, i) => ({
+        left: `${(i * 7 + 3) % 100}%`,
+        animationDelay: `${i * 0.4}s`,
+        animationDuration: `${5 + (i % 4)}s`,
+        width: `${2 + (i % 3)}px`,
+        height: `${2 + (i % 3)}px`,
+      })),
+    []
   );
 
+  const progressLabel =
+    progress < 35 ? "Uploading image..." :
+    progress < 65 ? "Reading your palm lines..." :
+    progress < 85 ? "Interpreting the mounts..." :
+    "Revealing your destiny...";
+
+  // ─────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────
   return (
     <main className="min-h-screen bg-mystical">
+      {/* Toast container (Phase 2 #11) */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+      {/* Photo guide modal (Phase 2 #5) */}
+      {showPhotoGuide && <PhotoGuideModal onClose={() => setShowPhotoGuide(false)} />}
+
+      {/* Hidden file inputs */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleFileChange}
+        className="hidden"
+        aria-label="Upload palm photo"
+      />
+      {/* Camera input for mobile (Phase 2 #6) */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        capture="environment"
+        onChange={handleFileChange}
+        className="hidden"
+        aria-label="Take palm photo with camera"
+      />
+
       {/* Floating particles */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+      <div className="fixed inset-0 pointer-events-none overflow-hidden no-print" style={{ zIndex: 0 }}>
         {particles.map((p, i) => (
           <div
             key={i}
@@ -369,90 +498,120 @@ export default function Home() {
               animationDelay: p.animationDelay,
               animationDuration: p.animationDuration,
               width: p.width,
-              height: p.height
+              height: p.height,
             }}
           />
         ))}
       </div>
 
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-[#1a1a2e] to-transparent py-4 px-6">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-[#1a1a2e] to-transparent py-4 px-6 no-print">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-3xl">🖐️</span>
             <h1 className="font-decorative text-xl text-highlight">PalmWis</h1>
           </div>
+          {reading && !isProcessing && (
+            <button onClick={reset} className="btn-secondary text-sm py-2 px-5">
+              New Reading
+            </button>
+          )}
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-20">
+      {/* ── Hero ──────────────────────────────────────────────── */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-20 no-print">
         <div className="max-w-4xl mx-auto text-center fade-in">
-          <h1 className="font-decorative text-4xl md:text-5xl lg:text-6xl mb-6 leading-tight" style={{ textShadow: "0 0 40px rgba(233, 69, 96, 0.3)" }}>
+          <h1
+            className="font-decorative text-4xl md:text-5xl lg:text-6xl mb-6 leading-tight"
+            style={{ textShadow: "0 0 40px rgba(233, 69, 96, 0.3)" }}
+          >
             Discover Your Destiny<br />
             <span className="text-highlight">Written in Your Palm</span>
           </h1>
           <p className="text-xl md:text-2xl text-text-secondary mb-10 max-w-2xl mx-auto font-body">
             Ancient palmistry wisdom made simple. Upload your palm photo and uncover the secrets written in your hand.
           </p>
-          <button
-            onClick={scrollToUpload}
-            className="btn-primary text-lg"
-          >
-            Read My Palm
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button onClick={scrollToUpload} className="btn-primary text-lg">
+              Read My Palm
+            </button>
+            <button
+              onClick={() => setShowPhotoGuide(true)}
+              className="btn-secondary text-lg flex items-center gap-2 justify-center"
+            >
+              📸 Photo Tips
+            </button>
+          </div>
         </div>
-
-        {/* Decorative palm icon */}
-        <div className="mt-16 text-9xl opacity-20 animate-pulse">
-          🖐️
-        </div>
+        <div className="mt-16 text-9xl opacity-20 animate-pulse">🖐️</div>
       </section>
 
-      {/* Upload Section */}
-      <section id="upload-section" className="relative py-20 px-6">
+      {/* ── Upload Section ─────────────────────────────────────── */}
+      <section id="upload-section" className="relative py-20 px-6 no-print">
         <div className="max-w-3xl mx-auto">
           {!image ? (
-            <div
-              className={`upload-zone ${dragOver ? 'dragover' : ''} fade-in`}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onClick={handleClick}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <div className="text-6xl mb-6">📷</div>
-              <h2 className="font-decorative text-2xl mb-4">Drop Your Palm Photo Here</h2>
-              <p className="text-text-secondary mb-4">or click to browse</p>
-              <p className="text-sm text-text-secondary">Supports: JPEG, PNG, WebP (max 10MB)</p>
+            <div className="fade-in">
+              {/* Drag & drop zone */}
+              <div
+                id="drop-zone"
+                className={`upload-zone ${dragOver ? "dragover" : ""}`}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onClick={handleClick}
+                role="button"
+                tabIndex={0}
+                aria-label="Upload palm photo"
+                onKeyDown={e => e.key === "Enter" && handleClick()}
+              >
+                <div className="text-6xl mb-6">📷</div>
+                <h2 className="font-decorative text-2xl mb-4">Drop Your Palm Photo Here</h2>
+                <p className="text-text-secondary mb-2">or click to browse files</p>
+                <p className="text-sm text-text-secondary">Supports: JPEG, PNG, WebP · max 10MB</p>
+              </div>
+
+              {/* Mobile camera + guide buttons (Phase 2 #6) */}
+              <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="btn-secondary flex items-center justify-center gap-2"
+                  aria-label="Take photo with camera"
+                >
+                  📱 Open Camera
+                </button>
+                <button
+                  onClick={() => setShowPhotoGuide(true)}
+                  className="btn-secondary flex items-center justify-center gap-2"
+                  aria-label="View palm photo guide"
+                >
+                  ❓ Photo Guide
+                </button>
+              </div>
             </div>
           ) : (
             <div className="fade-in">
               <div className="card-mystical p-8 glow-subtle">
                 <div className="flex flex-col md:flex-row gap-8 items-start">
-                  {/* Image Preview */}
-                  <div className="relative flex-shrink-0">
-                    <div className="relative">
+                  {/* Image preview */}
+                  <div className="relative flex-shrink-0 w-full md:w-auto">
+                    <div className="relative max-w-[280px] mx-auto">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={image}
                         alt="Uploaded palm"
-                        className="max-w-xs mx-auto rounded-xl shadow-2xl"
+                        className="w-full rounded-xl shadow-2xl"
                         style={{ border: "3px solid rgba(233, 69, 96, 0.3)" }}
                       />
                       {isProcessing && (
-                        <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
-                          <div className="scan-line" style={{ position: "relative", width: "100%", animation: "scan 2s ease-in-out infinite" }} />
+                        <div className="absolute inset-0 bg-black/50 rounded-xl overflow-hidden">
+                          <div className="scan-line" />
                         </div>
                       )}
                     </div>
-                    <p className="text-sm text-text-secondary mt-2 text-center">{fileName}</p>
+                    <p className="text-sm text-text-secondary mt-2 text-center truncate max-w-[280px] mx-auto">
+                      {fileName}
+                    </p>
                   </div>
 
                   {/* Controls */}
@@ -460,36 +619,36 @@ export default function Home() {
                     <h3 className="font-decorative text-2xl mb-4 text-highlight">
                       {isProcessing ? "Reading Your Palm..." : "Ready to Analyze"}
                     </h3>
-                    
+
                     {isProcessing ? (
                       <div className="mb-4">
-                        <div className="w-full bg-[#16213e] rounded-full h-3 overflow-hidden">
+                        <div className="w-full bg-[#16213e] rounded-full h-3 overflow-hidden mb-2">
                           <div
                             className="h-full bg-gradient-to-r from-[#e94560] to-[#f5c518] transition-all duration-300 rounded-full"
                             style={{ width: `${Math.min(progress, 100)}%` }}
                           />
                         </div>
-                        <p className="text-text-secondary mt-2">Analyzing lines and mounts...</p>
+                        <p className="text-text-secondary text-sm">{progressLabel}</p>
                       </div>
                     ) : (
                       <div className="flex flex-col gap-4">
                         <p className="text-text-secondary">
                           Your palm is ready to be read. Click below to reveal the ancient wisdom written in your hand.
                         </p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                          <button
-                            onClick={analyzePalm}
-                            className="btn-primary"
-                          >
-                            Analyze Palm
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+                          <button onClick={analyzePalm} className="btn-primary">
+                            ✨ Analyze Palm
                           </button>
-                          <button
-                            onClick={reset}
-                            className="btn-secondary"
-                          >
+                          <button onClick={reset} className="btn-secondary">
                             Choose Different Photo
                           </button>
                         </div>
+                        <button
+                          onClick={() => setShowPhotoGuide(true)}
+                          className="text-sm text-text-secondary hover:text-highlight transition-colors"
+                        >
+                          📸 Tips for a better reading
+                        </button>
                       </div>
                     )}
                   </div>
@@ -500,10 +659,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Results Section */}
+      {/* ── Results Section ────────────────────────────────────── */}
       {reading && !isProcessing && (
         <section id="results" className="relative py-20 px-6">
           <div className="max-w-5xl mx-auto">
+
             {/* Header */}
             <div className="text-center mb-12 fade-in">
               <h2 className="font-decorative text-3xl md:text-4xl mb-4">
@@ -514,7 +674,7 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Palm Type Badge */}
+            {/* Palm type badge */}
             <div className="flex justify-center mb-8 fade-in delay-1">
               <div className="card-mystical px-8 py-4 glow-gold inline-flex items-center gap-4">
                 <span className="text-3xl">
@@ -527,22 +687,26 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Tabs */}
-            <div className="flex flex-wrap justify-center gap-2 mb-8 fade-in delay-2">
-              {tabs.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            {/* Scrollable tabs — Phase 2 FIX #8 */}
+            <div className="tabs-scroll fade-in delay-2 mb-8" role="tablist">
+              <div className="flex gap-1 min-w-max px-2 md:justify-center">
+                {tabs.map(tab => (
+                  <button
+                    key={tab.id}
+                    role="tab"
+                    aria-selected={activeTab === tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`tab-button whitespace-nowrap ${activeTab === tab.id ? "active" : ""}`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Content */}
+            {/* Tab content */}
             <div className="card-mystical p-8 glow-subtle fade-in delay-3">
-              {/* Overview Tab */}
+
               {activeTab === "overview" && (
                 <div className="space-y-6">
                   <div>
@@ -558,7 +722,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Major Lines Tab */}
               {activeTab === "majorLines" && (
                 <div className="space-y-6">
                   <h3 className="font-decorative text-2xl mb-6 text-highlight">The Major Lines of Your Palm</h3>
@@ -575,7 +738,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Mounts Tab */}
               {activeTab === "mounts" && (
                 <div className="space-y-6">
                   <h3 className="font-decorative text-2xl mb-6 text-highlight">The Seven Mounts of Your Palm</h3>
@@ -595,7 +757,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Fingers Tab */}
               {activeTab === "fingers" && (
                 <div className="space-y-6">
                   <h3 className="font-decorative text-2xl mb-6 text-highlight">Your Fingers Tell the Story</h3>
@@ -615,14 +776,17 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Signs Tab */}
               {activeTab === "signs" && (
                 <div className="space-y-6">
-                  <h3 className="font-decorative text-2xl mb-6 text-highlight">Special Signs & Marks</h3>
+                  <h3 className="font-decorative text-2xl mb-6 text-highlight">Special Signs &amp; Marks</h3>
                   <p className="text-text-secondary mb-6">
                     These unique markings on your palm are considered significant in palmistry, indicating special gifts or life events.
                   </p>
-                  {reading.signs.map((sign, idx) => (
+                  {reading.signs.length === 0 ? (
+                    <p className="text-text-secondary text-center py-8">
+                      Your palm shows fewer prominent special marks, suggesting a clean, straightforward path in life.
+                    </p>
+                  ) : reading.signs.map((sign, idx) => (
                     <div key={idx} className="bg-[#16213e] rounded-xl p-6">
                       <h4 className="font-decorative text-lg mb-3 text-accent">{sign.name}</h4>
                       <p className="text-text-primary mb-3">{sign.content}</p>
@@ -632,18 +796,12 @@ export default function Home() {
                       </div>
                     </div>
                   ))}
-                  {reading.signs.length === 0 && (
-                    <p className="text-text-secondary text-center py-8">
-                      Your palm shows fewer prominent special marks, suggesting a clean, straightforward path in life without major interruptions.
-                    </p>
-                  )}
                 </div>
               )}
 
-              {/* Career Tab */}
               {activeTab === "career" && (
                 <div className="space-y-6">
-                  <h3 className="font-decorative text-2xl mb-6 text-highlight">Career & Success</h3>
+                  <h3 className="font-decorative text-2xl mb-6 text-highlight">Career &amp; Success</h3>
                   <div className="bg-[#16213e] rounded-xl p-8">
                     <p className="text-lg text-text-primary mb-6">{reading.career}</p>
                     <div className="border-t border-[#252545] pt-6">
@@ -652,23 +810,22 @@ export default function Home() {
                         Your palm reveals natural talents that, when developed, can lead to fulfilling careers. The mounts and lines work together to show where your strengths lie.
                       </p>
                       <p className="text-text-secondary leading-relaxed">
-                        Consider paths that align with your core nature. For Fire types, leadership roles suit you. Earth types thrive in stable, practical work. Air types excel in intellectual fields. Water types shine in creative or helping professions.
+                        Consider paths that align with your core nature. Fire types thrive in leadership. Earth types in stable, practical work. Air types in intellectual fields. Water types in creative or helping professions.
                       </p>
                     </div>
                   </div>
                   <div className="bg-gradient-to-r from-[#e94560]/20 to-[#f5c518]/20 rounded-xl p-6 border border-[#e94560]/30">
                     <p className="text-highlight font-medium">💡 Pro Tip:</p>
                     <p className="text-text-secondary mt-2">
-                      Your fingers and mounts together paint the complete picture. Trust your instincts when choosing career paths - your palm has been guiding thousands toward their destiny for millennia.
+                      Your fingers and mounts together paint the complete picture. Trust your instincts when choosing career paths — your palm has been guiding thousands toward their destiny for millennia.
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Love Tab */}
               {activeTab === "love" && (
                 <div className="space-y-6">
-                  <h3 className="font-decorative text-2xl mb-6 text-highlight">Love & Relationships</h3>
+                  <h3 className="font-decorative text-2xl mb-6 text-highlight">Love &amp; Relationships</h3>
                   <div className="bg-[#16213e] rounded-xl p-8">
                     <p className="text-lg text-text-primary mb-6">{reading.love}</p>
                     <div className="border-t border-[#252545] pt-6">
@@ -684,17 +841,23 @@ export default function Home() {
                   <div className="bg-gradient-to-r from-[#e94560]/20 to-[#f5c518]/20 rounded-xl p-6 border border-[#e94560]/30">
                     <p className="text-highlight font-medium">💡 Pro Tip:</p>
                     <p className="text-text-secondary mt-2">
-                      No palm is exactly alike - your unique combination of lines, mounts, and marks makes your approach to love entirely your own. Embrace what makes you different.
+                      No palm is exactly alike — your unique combination of lines, mounts, and marks makes your approach to love entirely your own. Embrace what makes you different.
                     </p>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-center gap-4 mt-8 fade-in delay-4">
-              <button onClick={reset} className="btn-primary">
-                Read Another Palm
+            {/* Action buttons — Phase 2 #7 */}
+            <div className="flex flex-wrap justify-center gap-4 mt-8 fade-in delay-4 no-print">
+              <button onClick={shareReading} className="btn-primary flex items-center gap-2">
+                🔗 Share Reading
+              </button>
+              <button onClick={printReading} className="btn-secondary flex items-center gap-2">
+                📄 Save as PDF
+              </button>
+              <button onClick={reset} className="btn-secondary flex items-center gap-2">
+                🖐️ Read Another Palm
               </button>
             </div>
           </div>
@@ -702,16 +865,16 @@ export default function Home() {
       )}
 
       {/* Footer */}
-      <footer className="relative py-12 px-6 border-t border-[#252545]">
+      <footer className="relative py-12 px-6 border-t border-[#252545] no-print">
         <div className="max-w-4xl mx-auto text-center">
           <div className="text-4xl mb-6">🖐️</div>
           <p className="text-text-secondary mb-4 text-sm max-w-2xl mx-auto">
-            Palmistry is an ancient art practiced for thousands of years across many cultures. 
-            This reading is for entertainment purposes only and should not be used as the sole basis 
+            Palmistry is an ancient art practiced for thousands of years across many cultures.
+            This reading is for entertainment purposes only and should not be used as the sole basis
             for major life decisions.
           </p>
           <p className="text-xs text-text-secondary">
-            © PalmWis - Bringing ancient wisdom to the modern world
+            © PalmWis — Bringing ancient wisdom to the modern world
           </p>
         </div>
       </footer>

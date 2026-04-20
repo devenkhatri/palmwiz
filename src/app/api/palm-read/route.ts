@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     const apiKey = process.env.OPENROUTER_API_KEY;
-    const model = process.env.OPENROUTER_MODEL || "openrouter/free";
+    const model = process.env.OPENROUTER_MODEL || "google/gemini-flash-1.5-8b";
 
     if (!apiKey || apiKey === "your-api-key-here") {
       return NextResponse.json(
@@ -79,6 +79,10 @@ export async function POST(request: NextRequest) {
           {
             role: "user",
             content: [
+              {
+                type: "text",
+                text: "Please analyze this palm photo and provide a detailed palmistry reading in the exact JSON format specified in the system prompt."
+              },
               {
                 type: "image_url",
                 image_url: {
