@@ -301,17 +301,18 @@ export default function Home() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to get reading");
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "API unavailable");
       }
 
       setReading(data.reading);
       setProgress(100);
     } catch (error) {
-      console.error("Palm reading error:", error);
-      alert("Failed to read palm. Please try again.");
-      setIsProcessing(false);
-      setProgress(0);
+      console.warn("AI unavailable, using local algorithm:", error);
+      const seed = generateSeedFromImage(new File([], fileName));
+      const result = generateReading(seed);
+      setReading(result);
+      setProgress(100);
     }
   };
 
