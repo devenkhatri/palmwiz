@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import EmailGateModal from "@/components/EmailGateModal";
+import PaywallModal   from "@/components/PaywallModal";
+import {
+  loadCredits, consumeCredit, addCredits, unlockWithEmail,
+  type CreditState,
+} from "@/lib/credits";
 
 // ─────────────────────────────────────────────────────────────
 // TYPES
@@ -227,7 +233,7 @@ function PhotoGuideModal({ onClose }: { onClose: () => void }) {
 export default function Home() {
   const [image, setImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
-  const [currentFile, setCurrentFile] = useState<File | null>(null); // FIX #2
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [reading, setReading] = useState<Reading | null>(null);
@@ -236,7 +242,15 @@ export default function Home() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [showPhotoGuide, setShowPhotoGuide] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // ── Phase 3 state ───────────────────────────────────────────
+  const [creditState, setCreditState] = useState<CreditState>({ credits: 1, email: null, unlocked: false });
+  const [showEmailGate, setShowEmailGate] = useState(false);
+  const [showPaywall,   setShowPaywall]   = useState(false);
+  const [pendingTab,    setPendingTab]    = useState<string | null>(null);
+  const [shareUrl,      setShareUrl]      = useState<string | null>(null);
+  const [savingShare,   setSavingShare]   = useState(false);
+
+  const fileInputRef   = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // ── Toasts ──────────────────────────────────────────────────
@@ -250,17 +264,21 @@ export default function Home() {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  // ── localStorage restore (Phase 2 #9) ───────────────────────
+  // ── localStorage restore + credit load (Phase 2 #9 / Phase 3) ──
   useEffect(() => {
+    // Load credits
+    setCreditState(loadCredits());
     try {
-      const savedReading = localStorage.getItem("palmwiz_reading");
-      const savedImage = localStorage.getItem("palmwiz_image");
+      const savedReading  = localStorage.getItem("palmwiz_reading");
+      const savedImage    = localStorage.getItem("palmwiz_image");
       const savedFileName = localStorage.getItem("palmwiz_filename");
+      const savedShare    = localStorage.getItem("palmwiz_share_url");
       if (savedReading && savedImage) {
         setReading(JSON.parse(savedReading));
         setImage(savedImage);
         setFileName(savedFileName || "");
         setProgress(100);
+        if (savedShare) setShareUrl(savedShare);
         addToast("Your previous reading has been restored!", "info");
       }
     } catch {
@@ -268,6 +286,51 @@ export default function Home() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
+
+  // ── Phase 3: tab click with email gate ──────────────────────
+  const handleTabClick = useCallback((tabId: string) => {
+    if (tabId === "overview" || creditState.unlocked) {
+      setActiveTab(tabId);
+      return;
+    }
+    // Gate — save which tab they wanted
+    setPendingTab(tabId);
+    setShowEmailGate(true);
+  }, [creditState.unlocked]);
+
+  // ── Phase 3: email unlock handler ────────────────────────────
+  const handleEmailUnlock = useCallback(async (email: string) => {
+    const next = unlockWithEmail(creditState, email);
+    setCreditState(next);
+    setShowEmailGate(false);
+    if (pendingTab) { setActiveTab(pendingTab); setPendingTab(null); }
+    addToast("Full reading unlocked! 3 free readings active. 🎉", "success");
+    // Save reading to DB + get share URL
+    if (reading) {
+      setSavingShare(true);
+      try {
+        const res = await fetch("/api/readings/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, reading, palmType: reading.type }),
+        });
+        const d = await res.json();
+        if (d.shareToken && d.configured) {
+          const url = `${window.location.origin}/reading/${d.shareToken}`;
+          setShareUrl(url);
+          try { localStorage.setItem("palmwiz_share_url", url); } catch { /* quota */ }
+        }
+      } catch { /* non-fatal */ } finally { setSavingShare(false); }
+    }
+  }, [creditState, pendingTab, reading, addToast]);
+
+  // ── Phase 3: paywall success handler ────────────────────────
+  const handlePaymentSuccess = useCallback((credits: number) => {
+    const next = addCredits(creditState, credits);
+    setCreditState(next);
+    setShowPaywall(false);
+    addToast(`Payment successful! ${credits >= 999 ? "Unlimited readings active" : `${credits} credits added`} 🎉`, "success");
+  }, [creditState, addToast]);
 
   // ── File handling ────────────────────────────────────────────
   const handleFile = useCallback(
@@ -315,9 +378,14 @@ export default function Home() {
     e.target.value = ""; // allow re-selecting same file
   };
 
-  // ── Palm analysis — Phase 1 all fixes applied ────────────────
+  // ── Palm analysis — Phase 1 fixes + Phase 3 credit check ───
   const analyzePalm = async () => {
     if (!image) return;
+    // Credit gate
+    if (creditState.credits <= 0) { setShowPaywall(true); return; }
+    const nextCredits = consumeCredit(creditState);
+    setCreditState(nextCredits);
+    setShareUrl(null);
     setIsProcessing(true);
     setProgress(0);
     setReading(null);
@@ -352,12 +420,13 @@ export default function Home() {
 
       setReading(data.reading);
       setProgress(100);
-      setIsProcessing(false); // FIX #1
+      setIsProcessing(false);
 
       try {
         localStorage.setItem("palmwiz_reading", JSON.stringify(data.reading));
         localStorage.setItem("palmwiz_image", image);
         localStorage.setItem("palmwiz_filename", fileName);
+        localStorage.removeItem("palmwiz_share_url");
       } catch { /* quota exceeded — ignore */ }
 
     } catch (error) {
@@ -389,10 +458,12 @@ export default function Home() {
     setReading(null);
     setProgress(0);
     setActiveTab("overview");
+    setShareUrl(null);
     try {
       localStorage.removeItem("palmwiz_reading");
       localStorage.removeItem("palmwiz_image");
       localStorage.removeItem("palmwiz_filename");
+      localStorage.removeItem("palmwiz_share_url");
     } catch { /* ignore */ }
   };
 
@@ -414,13 +485,15 @@ export default function Home() {
   const shareReading = async () => {
     if (!reading) return;
     const palmEmoji = reading.type === "fire" ? "🔥" : reading.type === "earth" ? "🌍" : reading.type === "air" ? "💨" : "💧";
-    const text = `${palmEmoji} I just got my palm read on PalmWis!\n\nI have a ${reading.type.charAt(0).toUpperCase() + reading.type.slice(1)} palm — ${reading.overview.slice(0, 100)}...\n\nDiscover yours at palmwis.app`;
+    // Prefer the DB share URL; fall back to text share
+    const url  = shareUrl ?? "https://palmwis.app";
+    const text = `${palmEmoji} I just got my palm read on PalmWis!\n\nI have a ${reading.type.charAt(0).toUpperCase() + reading.type.slice(1)} palm — ${reading.overview.slice(0, 100)}...\n\nSee my full reading: ${url}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: "My PalmWis Reading", text, url: "https://palmwis.app" });
+        await navigator.share({ title: "My PalmWis Reading", text, url });
       } else {
-        await navigator.clipboard.writeText(text);
-        addToast("Reading copied to clipboard! Paste it anywhere 🖐️", "success");
+        await navigator.clipboard.writeText(url !== "https://palmwis.app" ? url : text);
+        addToast(shareUrl ? "Share link copied! 🔗" : "Reading copied to clipboard! 🖐️", "success");
       }
     } catch {
       addToast("Could not share — try copying manually", "error");
@@ -463,6 +536,23 @@ export default function Home() {
     <main className="min-h-screen bg-mystical">
       {/* Toast container (Phase 2 #11) */}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+      {/* Email gate modal (Phase 3 #12) */}
+      {showEmailGate && (
+        <EmailGateModal
+          onUnlock={handleEmailUnlock}
+          onClose={() => { setShowEmailGate(false); setPendingTab(null); }}
+        />
+      )}
+
+      {/* Paywall modal (Phase 3 #14) */}
+      {showPaywall && (
+        <PaywallModal
+          email={creditState.email}
+          onSuccess={handlePaymentSuccess}
+          onClose={() => setShowPaywall(false)}
+        />
+      )}
 
       {/* Photo guide modal (Phase 2 #5) */}
       {showPhotoGuide && <PhotoGuideModal onClose={() => setShowPhotoGuide(false)} />}
@@ -511,11 +601,23 @@ export default function Home() {
             <span className="text-3xl">🖐️</span>
             <h1 className="font-decorative text-xl text-highlight">PalmWis</h1>
           </div>
-          {reading && !isProcessing && (
-            <button onClick={reset} className="btn-secondary text-sm py-2 px-5">
-              New Reading
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {/* Credit badge (Phase 3 #13) */}
+            <div
+              onClick={() => creditState.credits === 0 ? setShowPaywall(true) : null}
+              className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-colors
+                ${
+                  creditState.credits === 0
+                    ? "border-[#e94560]/60 bg-[#e94560]/10 text-[#e94560] hover:bg-[#e94560]/20"
+                    : "border-[#f5c518]/40 bg-[#f5c518]/10 text-[#f5c518]"
+                }`}
+            >
+              🔮 {creditState.credits >= 999 ? "Unlimited" : `${creditState.credits} reading${creditState.credits !== 1 ? "s" : ""} left`}
+            </div>
+            {reading && !isProcessing && (
+              <button onClick={reset} className="btn-secondary text-sm py-2 px-5">New Reading</button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -536,6 +638,12 @@ export default function Home() {
             <button onClick={scrollToUpload} className="btn-primary text-lg">
               Read My Palm
             </button>
+            <a
+              href="/compatibility"
+              className="btn-secondary text-lg flex items-center gap-2 justify-center"
+            >
+              💞 Compatibility
+            </a>
             <button
               onClick={() => setShowPhotoGuide(true)}
               className="btn-secondary text-lg flex items-center gap-2 justify-center"
@@ -687,7 +795,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Scrollable tabs — Phase 2 FIX #8 */}
+            {/* Scrollable tabs — Phase 2 #8 | gated — Phase 3 #12 */}
             <div className="tabs-scroll fade-in delay-2 mb-8" role="tablist">
               <div className="flex gap-1 min-w-max px-2 md:justify-center">
                 {tabs.map(tab => (
@@ -695,10 +803,14 @@ export default function Home() {
                     key={tab.id}
                     role="tab"
                     aria-selected={activeTab === tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`tab-button whitespace-nowrap ${activeTab === tab.id ? "active" : ""}`}
+                    onClick={() => handleTabClick(tab.id)}
+                    className={`tab-button whitespace-nowrap ${activeTab === tab.id ? "active" : ""} relative`}
                   >
                     {tab.label}
+                    {/* Lock icon on gated tabs */}
+                    {tab.id !== "overview" && !creditState.unlocked && (
+                      <span className="ml-1 text-xs opacity-50">🔒</span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -848,16 +960,41 @@ export default function Home() {
               )}
             </div>
 
-            {/* Action buttons — Phase 2 #7 */}
-            <div className="flex flex-wrap justify-center gap-4 mt-8 fade-in delay-4 no-print">
+            {/* Share URL banner (Phase 3 #16) */}
+            {shareUrl && (
+              <div className="mt-6 fade-in">
+                <div className="card-mystical p-4 border border-[#f5c518]/30 flex flex-col sm:flex-row items-center gap-3">
+                  <span className="text-2xl flex-shrink-0">🔗</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-highlight text-sm font-semibold mb-1">Your shareable reading link</p>
+                    <p className="text-text-secondary text-xs truncate">{shareUrl}</p>
+                  </div>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(shareUrl); addToast("Link copied!", "success"); }}
+                    className="btn-secondary text-sm py-2 px-4 flex-shrink-0"
+                  >
+                    Copy Link
+                  </button>
+                </div>
+              </div>
+            )}
+            {savingShare && (
+              <p className="text-center text-xs text-text-secondary mt-3 animate-pulse">Saving your reading...</p>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex flex-wrap justify-center gap-4 mt-6 fade-in delay-4 no-print">
               <button onClick={shareReading} className="btn-primary flex items-center gap-2">
                 🔗 Share Reading
               </button>
               <button onClick={printReading} className="btn-secondary flex items-center gap-2">
                 📄 Save as PDF
               </button>
+              <a href="/compatibility" className="btn-secondary flex items-center gap-2">
+                💞 Compatibility Reading
+              </a>
               <button onClick={reset} className="btn-secondary flex items-center gap-2">
-                🖐️ Read Another Palm
+                🖐️ New Reading
               </button>
             </div>
           </div>

@@ -16,8 +16,8 @@ PHASE 2 — Core Product (1 week)
 PHASE 3 — Monetization (2–3 weeks)
   12. Email capture modal (gate tabs 2–7)
   13. Free credit system
-  14. Stripe checkout
-  15. User accounts (Clerk)
+  14. Razorpay checkout
+  15. User accounts (Supabase)
   16. Shareable reading URLs (DB)
   17. Compatibility reading feature
 
