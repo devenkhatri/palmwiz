@@ -4,8 +4,9 @@
 
 **Project Name**: PalmWis - Palmistry Reading App  
 **Type**: Interactive Web Application  
-**Core Functionality**: Accept palm photos and generate detailed, easy-to-understand palm readings based on traditional palmistry science  
-**Target Users**: General public curious about palmistry, ages 16+
+**Core Functionality**: Accept palm photos and generate AI-powered palm readings using OpenRouter API, with local fallback when API is unavailable  
+**Target Users**: General public curious about palmistry, ages 16+  
+**Live URL**: https://palmwis.app
 
 ---
 
@@ -112,25 +113,22 @@
 - Image preview after upload
 - Supported formats: JPEG, PNG, WebP
 - Max file size: 10MB
-- Client-side image compression if needed
 
-**Palm Analysis (Simulated)**:
-Since we cannot do actual AI image analysis of palm lines, we will generate randomized but realistic-sounding palm readings based on:
-- Random seed from image hash (for consistency)
-- Cover all major aspects of palmistry
-- Each reading includes:
-  - Personal description
-  - Line analysis (Life, Heart, Head)
-  - Mount analysis (Venus, Jupiter, Saturn, Mercury, Mars, Moon)
-  - Finger analysis (relative lengths)
-  - Special marks and signs
-  - Career tendencies
-  - Love and relationships
-  - Health indicators
+**Palm Analysis (AI-Powered)**:
+- Uses OpenRouter API with vision-enabled model
+- Model configured via environment variable: `OPENROUTER_MODEL=openrouter/free`
+- API key stored securely in `.env.local`
+- Falls back to local algorithm when API unavailable
+
+**API Integration**:
+- Endpoint: `/api/palm-read` (POST)
+- Sends image to OpenRouter AI for analysis
+- Returns structured JSON palm reading
+- Falls back gracefully on error
 
 **Results Generation**:
 - Generate 7 main sections of reading
-- Each section has 3-5 detailed paragraphs
+- Each section has detailed content
 - Use simple, accessible language
 - Include "what this means for you" takeaways
 
@@ -145,10 +143,20 @@ Since we cannot do actual AI image analysis of palm lines, we will generate rand
 
 ### Data Handling
 
-- All processing client-side (no server uploads)
-- Image stored temporarily in memory
-- Reading generated using seeded random based on image characteristics
+- Image sent to OpenRouter API for AI analysis
+- Reading returned as structured JSON
+- Local fallback uses seeded random based on image characteristics
 - No persistent storage needed
+- Images not stored on server
+
+### Environment Variables
+
+```
+OPENROUTER_API_KEY=your-openrouter-api-key
+OPENROUTER_MODEL=openrouter/free
+```
+
+Get API key at: https://openrouter.ai/
 
 ### Edge Cases
 
@@ -228,6 +236,8 @@ Since we cannot do actual AI image analysis of palm lines, we will generate rand
 - [ ] Tabs navigate between sections
 - [ ] Can start over with new photo
 - [ ] Responsive on mobile
+- [ ] AI API integration works when key configured
+- [ ] Falls back to local algorithm on API error
 
 ### Content Checkpoints
 
