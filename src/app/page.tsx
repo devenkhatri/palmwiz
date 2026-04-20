@@ -168,7 +168,7 @@ function generateReading(seed: number): Reading {
 
 function ToastContainer({ toasts, onRemove }: { toasts: ToastItem[]; onRemove: (id: string) => void }) {
   return (
-    <div className="fixed top-4 right-4 z-[200] flex flex-col gap-3 no-print pointer-events-none" aria-live="polite">
+    <div className="fixed top-3 md:top-4 left-3 md:left-auto right-3 md:right-4 z-[200] flex flex-col gap-2 md:gap-3 no-print pointer-events-none" aria-live="polite">
       {toasts.map(toast => (
         <div
           key={toast.id}
@@ -176,10 +176,10 @@ function ToastContainer({ toasts, onRemove }: { toasts: ToastItem[]; onRemove: (
           onClick={() => onRemove(toast.id)}
           role="alert"
         >
-          <span className="text-base flex-shrink-0">
+          <span className="text-sm md:text-base flex-shrink-0">
             {toast.type === "error" ? "⚠️" : toast.type === "success" ? "✅" : "ℹ️"}
           </span>
-          <p className="text-sm leading-snug flex-1">{toast.message}</p>
+          <p className="text-xs md:text-sm leading-snug flex-1">{toast.message}</p>
           <button aria-label="Dismiss" className="ml-1 opacity-60 hover:opacity-100 text-xs flex-shrink-0">✕</button>
         </div>
       ))}
@@ -206,9 +206,18 @@ function PhotoGuideModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="card-mystical p-8 max-w-md w-full mx-4 glow-subtle"
+        className="card-mystical p-5 md:p-8 max-w-md w-full mx-4 glow-subtle relative"
         onClick={e => e.stopPropagation()}
       >
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-text-secondary hover:text-highlight transition-colors p-1"
+          aria-label="Close"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         <h3 className="font-decorative text-xl text-highlight mb-6 text-center">📸 Perfect Palm Photo Guide</h3>
         <ul className="space-y-4">
           {tips.map(({ icon, tip }) => (
@@ -606,69 +615,75 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-[#1a1a2e] to-transparent py-4 px-6 no-print">
+      {/* Header - Mobile Responsive */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-[#1a1a2e] via-[#1a1a2e] to-transparent py-3 px-4 md:py-4 md:px-6 no-print">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">🖐️</span>
-            <h1 className="font-decorative text-xl text-highlight">PalmWis</h1>
+          <div className="flex items-center gap-2 md:gap-3">
+            <span className="text-2xl md:text-3xl">🖐️</span>
+            <h1 className="font-decorative text-lg md:text-xl text-highlight">PalmWis</h1>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Credit badge (Phase 3 #13) */}
+          <div className="flex items-center gap-2 md:gap-3">
+            {/* Credit badge - smaller on mobile */}
             <div
               onClick={() => setShowPaywall(true)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-colors hover:scale-105
+              className={`flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 rounded-full text-xs font-semibold border cursor-pointer transition-all hover:scale-105 active:scale-95
                 ${
                   creditState.credits === 0
                     ? "border-[#e94560]/60 bg-[#e94560]/10 text-[#e94560] hover:bg-[#e94560]/20"
                     : "border-[#f5c518]/40 bg-[#f5c518]/10 text-[#f5c518]"
                 }`}
             >
-              🔮 {creditState.credits >= 999 ? "Unlimited" : `${creditState.credits} reading${creditState.credits !== 1 ? "s" : ""} left`}
+              <span className="hidden md:inline">🔮</span>
+              <span className="md:hidden">🔮</span>
+              <span className="text-[10px] md:text-xs">{creditState.credits >= 999 ? "∞" : `${creditState.credits}`}</span>
             </div>
             {reading && !isProcessing && (
-              <button onClick={reset} className="btn-secondary text-sm py-2 px-5">New Reading</button>
+              <button onClick={reset} className="btn-secondary text-xs py-1.5 px-3 md:text-sm md:py-2 md:px-5">New</button>
             )}
           </div>
         </div>
       </header>
 
       {/* ── Hero ──────────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-20 no-print">
+      <section className="relative min-h-[85vh] md:min-h-screen flex flex-col items-center justify-center px-4 md:px-6 pt-24 md:pt-20 no-print">
         <div className="max-w-4xl mx-auto text-center fade-in">
           <h1
-            className="font-decorative text-4xl md:text-5xl lg:text-6xl mb-6 leading-tight"
+            className="font-decorative text-3xl md:text-4xl lg:text-5xl mb-4 md:mb-6 leading-tight"
             style={{ textShadow: "0 0 40px rgba(233, 69, 96, 0.3)" }}
           >
             Discover Your Destiny<br />
             <span className="text-highlight">Written in Your Palm</span>
           </h1>
-          <p className="text-xl md:text-2xl text-text-secondary mb-10 max-w-2xl mx-auto font-body">
+          <p className="text-base md:text-xl lg:text-2xl text-text-secondary mb-8 md:mb-10 max-w-xl mx-auto font-body">
             Ancient palmistry wisdom made simple. Upload your palm photo and uncover the secrets written in your hand.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button onClick={scrollToUpload} className="btn-primary text-lg">
+          <div className="flex flex-col gap-3 w-full max-w-sm mx-auto">
+            <button onClick={scrollToUpload} className="btn-primary text-base md:text-lg">
               Read My Palm
             </button>
-            <a
-              href="/compatibility"
-              className="btn-secondary text-lg flex items-center gap-2 justify-center"
-            >
-              💞 Compatibility
-            </a>
-            <button
-              onClick={() => setShowPhotoGuide(true)}
-              className="btn-secondary text-lg flex items-center gap-2 justify-center"
-            >
-              📸 Photo Tips
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a
+                href="/compatibility"
+                className="btn-secondary text-sm flex items-center justify-center gap-2"
+              >
+                <span className="md:hidden">💞</span>
+                <span>Compatibility</span>
+              </a>
+              <button
+                onClick={() => setShowPhotoGuide(true)}
+                className="btn-secondary text-sm flex items-center justify-center gap-2"
+              >
+                <span className="md:hidden">📸</span>
+                <span>Photo Tips</span>
+              </button>
+            </div>
           </div>
         </div>
-        <div className="mt-16 text-9xl opacity-20 animate-pulse">🖐️</div>
+        <div className="mt-8 md:mt-16 text-7xl md:text-9xl opacity-20 animate-pulse">🖐️</div>
       </section>
 
       {/* ── Upload Section ─────────────────────────────────────── */}
-      <section id="upload-section" className="relative py-20 px-6 no-print">
+      <section id="upload-section" className="relative py-12 md:py-20 px-4 md:px-6 no-print">
         <div className="max-w-3xl mx-auto">
           {!image ? (
             <div className="fade-in">
@@ -685,37 +700,37 @@ export default function Home() {
                 aria-label="Upload palm photo"
                 onKeyDown={e => e.key === "Enter" && handleClick()}
               >
-                <div className="text-6xl mb-6">📷</div>
-                <h2 className="font-decorative text-2xl mb-4">Drop Your Palm Photo Here</h2>
+                <div className="text-5xl md:text-6xl mb-4 md:mb-6">📷</div>
+                <h2 className="font-decorative text-xl md:text-2xl mb-3 md:mb-4">Drop Your Palm Photo Here</h2>
                 <p className="text-text-secondary mb-2">or click to browse files</p>
-                <p className="text-sm text-text-secondary">Supports: JPEG, PNG, WebP · max 10MB</p>
+                <p className="text-xs md:text-sm text-text-secondary">Supports: JPEG, PNG, WebP · max 10MB</p>
               </div>
 
-              {/* Mobile camera + guide buttons (Phase 2 #6) */}
-              <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+              {/* Mobile camera + guide buttons */}
+              <div className="mt-5 md:mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={() => cameraInputRef.current?.click()}
                   className="btn-secondary flex items-center justify-center gap-2"
                   aria-label="Take photo with camera"
                 >
-                  📱 Open Camera
+                  📷 Camera
                 </button>
                 <button
                   onClick={() => setShowPhotoGuide(true)}
                   className="btn-secondary flex items-center justify-center gap-2"
                   aria-label="View palm photo guide"
                 >
-                  ❓ Photo Guide
+                  Tips
                 </button>
               </div>
             </div>
           ) : (
             <div className="fade-in">
-              <div className="card-mystical p-8 glow-subtle">
-                <div className="flex flex-col md:flex-row gap-8 items-start">
+              <div className="card-mystical p-5 md:p-8 glow-subtle">
+                <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
                   {/* Image preview */}
                   <div className="relative flex-shrink-0 w-full md:w-auto">
-                    <div className="relative max-w-[280px] mx-auto">
+                    <div className="relative max-w-[240px] md:max-w-[280px] mx-auto">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={image}
@@ -729,45 +744,45 @@ export default function Home() {
                         </div>
                       )}
                     </div>
-                    <p className="text-sm text-text-secondary mt-2 text-center truncate max-w-[280px] mx-auto">
+                    <p className="text-sm text-text-secondary mt-2 text-center truncate max-w-[240px] md:max-w-[280px] mx-auto">
                       {fileName}
                     </p>
                   </div>
 
                   {/* Controls */}
-                  <div className="flex-1 text-center md:text-left">
-                    <h3 className="font-decorative text-2xl mb-4 text-highlight">
+                  <div className="flex-1 text-center md:text-left w-full">
+                    <h3 className="font-decorative text-xl md:text-2xl mb-3 md:mb-4 text-highlight">
                       {isProcessing ? "Reading Your Palm..." : "Ready to Analyze"}
                     </h3>
 
                     {isProcessing ? (
                       <div className="mb-4">
-                        <div className="w-full bg-[#16213e] rounded-full h-3 overflow-hidden mb-2">
+                        <div className="w-full bg-[#16213e] rounded-full h-2 md:h-3 overflow-hidden mb-2">
                           <div
                             className="h-full bg-gradient-to-r from-[#e94560] to-[#f5c518] transition-all duration-300 rounded-full"
                             style={{ width: `${Math.min(progress, 100)}%` }}
                           />
                         </div>
-                        <p className="text-text-secondary text-sm">{progressLabel}</p>
+                        <p className="text-text-secondary text-xs md:text-sm">{progressLabel}</p>
                       </div>
                     ) : (
                       <div className="flex flex-col gap-4">
-                        <p className="text-text-secondary">
+                        <p className="text-sm md:text-text-secondary">
                           Your palm is ready to be read. Click below to reveal the ancient wisdom written in your hand.
                         </p>
-                        <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start w-full">
                           <button onClick={analyzePalm} className="btn-primary">
                             ✨ Analyze Palm
                           </button>
                           <button onClick={reset} className="btn-secondary">
-                            Choose Different Photo
+                            Different Photo
                           </button>
                         </div>
                         <button
                           onClick={() => setShowPhotoGuide(true)}
-                          className="text-sm text-text-secondary hover:text-highlight transition-colors"
+                          className="text-xs md:text-sm text-text-secondary hover:text-highlight transition-colors"
                         >
-                          📸 Tips for a better reading
+                          📸 Tips for better reading
                         </button>
                       </div>
                     )}
@@ -781,47 +796,47 @@ export default function Home() {
 
       {/* ── Results Section ────────────────────────────────────── */}
       {reading && !isProcessing && (
-        <section id="results" className="relative py-20 px-6">
+        <section id="results" className="relative py-12 md:py-20 px-4 md:px-6 pb-24">
           <div className="max-w-5xl mx-auto">
 
             {/* Header */}
-            <div className="text-center mb-12 fade-in">
-              <h2 className="font-decorative text-3xl md:text-4xl mb-4">
+            <div className="text-center mb-8 md:mb-12 fade-in">
+              <h2 className="font-decorative text-2xl md:text-3xl lg:text-4xl mb-3 md:mb-4">
                 Your <span className="text-highlight">Palm Reading</span>
               </h2>
-              <p className="text-text-secondary max-w-2xl mx-auto">
+              <p className="text-sm md:text-text-secondary max-w-xl mx-auto">
                 Based on the ancient art of palmistry, here is what your unique palm reveals about your personality, destiny, and potential.
               </p>
             </div>
 
             {/* Palm type badge */}
-            <div className="flex justify-center mb-8 fade-in delay-1">
-              <div className="card-mystical px-8 py-4 glow-gold inline-flex items-center gap-4">
-                <span className="text-3xl">
+            <div className="flex justify-center mb-6 md:mb-8 fade-in delay-1">
+              <div className="card-mystical px-5 md:px-8 py-3 md:py-4 glow-gold inline-flex items-center gap-3 md:gap-4">
+                <span className="text-2xl md:text-3xl">
                   {reading.type === "fire" ? "🔥" : reading.type === "earth" ? "🌍" : reading.type === "air" ? "💨" : "💧"}
                 </span>
                 <div>
-                  <p className="text-sm text-text-secondary uppercase tracking-wider">Palm Type</p>
-                  <p className="font-decorative text-xl text-highlight capitalize">{reading.type} Element</p>
+                  <p className="text-[10px] md:text-sm text-text-secondary uppercase tracking-wider">Palm Type</p>
+                  <p className="font-decorative text-lg md:text-xl text-highlight capitalize">{reading.type} Element</p>
                 </div>
               </div>
             </div>
 
             {/* Scrollable tabs — Phase 2 #8 | gated — Phase 3 #12 */}
-            <div className="tabs-scroll fade-in delay-2 mb-8" role="tablist">
-              <div className="flex gap-1 min-w-max px-2 md:justify-center">
+            <div className="tabs-scroll fade-in delay-2 mb-6 md:mb-8" role="tablist">
+              <div className="flex gap-1 min-w-max px-1 md:justify-center">
                 {tabs.map(tab => (
                   <button
                     key={tab.id}
                     role="tab"
                     aria-selected={activeTab === tab.id}
                     onClick={() => handleTabClick(tab.id)}
-                    className={`tab-button whitespace-nowrap ${activeTab === tab.id ? "active" : ""} relative`}
+                    className={`tab-button whitespace-nowrap text-xs md:text-sm px-3 md:px-4 ${activeTab === tab.id ? "active" : ""} relative`}
                   >
                     {tab.label}
-                    {/* Lock icon on gated tabs */}
+                    {/* Lock icon on gated tabs - hidden on mobile to save space */}
                     {tab.id !== "overview" && !creditState.unlocked && (
-                      <span className="ml-1 text-xs opacity-50">🔒</span>
+                      <span className="ml-0.5 md:ml-1 text-[10px] md:text-xs opacity-50">🔒</span>
                     )}
                   </button>
                 ))}
@@ -829,7 +844,7 @@ export default function Home() {
             </div>
 
             {/* Tab content */}
-            <div className="card-mystical p-8 glow-subtle fade-in delay-3">
+            <div className="card-mystical p-4 md:p-8 glow-subtle fade-in delay-3">
 
               {activeTab === "overview" && (
                 <div className="space-y-6">
@@ -994,19 +1009,16 @@ export default function Home() {
               <p className="text-center text-xs text-text-secondary mt-3 animate-pulse">Saving your reading...</p>
             )}
 
-            {/* Action buttons */}
-            <div className="flex flex-wrap justify-center gap-4 mt-6 fade-in delay-4 no-print">
-              <button onClick={shareReading} className="btn-primary flex items-center gap-2">
-                🔗 Share Reading
+            {/* Action buttons - mobile stacked, desktop inline */}
+            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 mt-6 fade-in delay-4 no-print pb-20 sm:pb-4">
+              <button onClick={shareReading} className="btn-primary flex items-center justify-center gap-2">
+                🔗 Share
               </button>
-              <button onClick={printReading} className="btn-secondary flex items-center gap-2">
-                📄 Save as PDF
+              <button onClick={printReading} className="btn-secondary flex items-center justify-center gap-2">
+                📄 Save PDF
               </button>
-              <a href="/compatibility" className="btn-secondary flex items-center gap-2">
-                💞 Compatibility Reading
-              </a>
-              <button onClick={reset} className="btn-secondary flex items-center gap-2">
-                🖐️ New Reading
+              <button onClick={reset} className="btn-secondary flex items-center justify-center gap-2">
+                🖐️ New
               </button>
             </div>
           </div>

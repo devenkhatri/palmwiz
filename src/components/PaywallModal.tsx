@@ -165,18 +165,27 @@ export default function PaywallModal({ email, credits, onSuccess, onClose }: Pro
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm no-print"
+      className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm no-print"
       onClick={onClose}
     >
       <div
-        className="card-mystical max-w-md w-full mx-4 overflow-hidden"
+        className="card-mystical max-w-md w-full mx-0 md:mx-4 overflow-hidden rounded-t-2xl md:rounded-2xl max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-br from-[#0f3460] to-[#1a1a2e] p-8 text-center border-b border-[#e94560]/20">
-          <div className="text-5xl mb-3">🔮</div>
-          <h2 className="font-decorative text-2xl text-highlight mb-2">Continue Your Journey</h2>
-          <p className="text-text-secondary text-sm">
+        <div className="bg-gradient-to-br from-[#0f3460] to-[#1a1a2e] p-5 md:p-8 text-center border-b border-[#e94560]/20 relative">
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 md:top-4 md:right-4 text-text-secondary hover:text-highlight transition-colors p-1"
+            aria-label="Close"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="text-4xl md:text-5xl mb-2 md:mb-3">🔮</div>
+          <h2 className="font-decorative text-xl md:text-2xl text-highlight mb-2">Continue Your Journey</h2>
+          <p className="text-text-secondary text-xs md:text-sm">
             You&apos;ve used your free readings. Choose a plan to continue.
           </p>
           {credits > 0 && (
@@ -186,24 +195,24 @@ export default function PaywallModal({ email, credits, onSuccess, onClose }: Pro
           )}
         </div>
 
-        <div className="p-8 space-y-4">
+        <div className="p-4 md:p-8 space-y-3 md:space-y-4">
           {/* Plan selector */}
           {(Object.keys(PLANS) as Plan[]).map(plan => (
             <button
               key={plan}
               onClick={() => setSelected(plan)}
-              className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-4
+              className={`w-full text-left p-3 md:p-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-3 md:gap-4
                 ${selected === plan
                   ? "border-[#e94560] bg-[#e94560]/10"
                   : "border-[#252545] bg-[#16213e] hover:border-[#e94560]/50"
                 }`}
             >
-              <span className="text-2xl">{PLANS[plan].icon}</span>
+              <span className="text-xl md:text-2xl">{PLANS[plan].icon}</span>
               <div className="flex-1">
-                <p className="font-decorative text-sm text-text-primary">{PLANS[plan].label}</p>
-                <p className="text-xs text-text-secondary">{PLANS[plan].subtext}</p>
+                <p className="font-decorative text-sm md:text-base text-text-primary">{PLANS[plan].label}</p>
+                <p className="text-[10px] md:text-xs text-text-secondary">{PLANS[plan].subtext}</p>
               </div>
-              <span className="font-decorative text-highlight text-lg">{PLANS[plan].price}</span>
+              <span className="font-decorative text-highlight text-base md:text-lg">{PLANS[plan].price}</span>
             </button>
           ))}
 
@@ -215,20 +224,20 @@ export default function PaywallModal({ email, credits, onSuccess, onClose }: Pro
 
           {/* Coupon input */}
           <div className="border-t border-[#252545] pt-4">
-            <p className="text-xs text-text-secondary text-center mb-2">Have a coupon code?</p>
+            <p className="text-[10px] md:text-xs text-text-secondary text-center mb-2">Have a coupon code?</p>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={couponCode}
                 onChange={e => { setCouponCode(e.target.value); setCouponSuccess(false); }}
-                placeholder="Enter coupon code"
+                placeholder="Enter code"
                 className="flex-1 bg-[#16213e] border border-[#252545] rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-[#e94560] focus:outline-none"
                 disabled={couponLoading}
               />
               <button
                 onClick={handleCoupon}
                 disabled={couponLoading}
-                className="btn-secondary text-sm py-2 px-4 disabled:opacity-60"
+                className="btn-secondary text-sm py-2 px-3 md:px-4 disabled:opacity-60"
               >
                 {couponLoading ? "..." : "Apply"}
               </button>
@@ -243,7 +252,7 @@ export default function PaywallModal({ email, credits, onSuccess, onClose }: Pro
             {loading ? "Processing..." : `Pay ${PLANS[selected].price} via Razorpay`}
           </button>
 
-          <p className="text-center text-xs text-text-secondary">
+          <p className="text-center text-[10px] md:text-xs text-text-secondary">
             Secured by Razorpay · No auto-renewal for credits pack
           </p>
 
