@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     const personalYear = calculatePersonalYear(dob, year);
 
     const apiKey = process.env.OPENROUTER_API_KEY;
-    const model = process.env.OPENROUTER_MODEL || "google/gemini-flash-1.5-8b";
+    const model = process.env.OPENROUTER_MODEL || "openrouter/free";
 
     if (!apiKey || apiKey === "your-api-key-here") {
       return NextResponse.json({ error: "OpenRouter API key not configured" }, { status: 500 });
@@ -124,7 +124,6 @@ export async function POST(request: NextRequest) {
             content: `Please interpret this numerology reading:\nName: ${name}\nDate of Birth: ${dob}\nLife Path Number: ${lifePath}\nExpression Number: ${expression}\nSoul Urge Number: ${soulUrge}\nPersonal Year ${year}: ${personalYear}`
           }
         ],
-        response_format: { type: "json_object" },
         max_tokens: 2000,
       }),
     });
@@ -144,10 +143,15 @@ export async function POST(request: NextRequest) {
 
     let reading: NumerologyReading;
     try {
-      reading = JSON.parse(content);
+      let cleaned = content.trim();
+      if (!cleaned.startsWith('{')) {
+        const startIdx = cleaned.indexOf('{');
+        if (startIdx >= 0) cleaned = cleaned.substring(startIdx);
+      }
+      reading = JSON.parse(cleaned);
     } catch (parseError) {
       console.error("Failed to parse AI response:", content);
-      return NextResponse.json({ error: "Invalid AI response format" }, { status: 500 });
+      return NextResponse.json({ error: "Invalid AI response format", debug: content.slice(0, 500) }, { status: 500 });
     }
 
     return NextResponse.json({ reading: { ...reading, calculations: { lifePath, expression, soulUrge, personalYear } } });

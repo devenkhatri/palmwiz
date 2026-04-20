@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const apiKey = process.env.OPENROUTER_API_KEY;
-    const model = process.env.OPENROUTER_MODEL || "google/gemini-flash-1.5-8b";
+    const model = process.env.OPENROUTER_MODEL || "openrouter/free";
 
     if (!apiKey || apiKey === "your-api-key-here") {
       return NextResponse.json({ error: "OpenRouter API key not configured" }, { status: 500 });
@@ -85,7 +85,6 @@ export async function POST(request: NextRequest) {
             content: `Please interpret these tarot cards:\n${cards.map((c: string, i: number) => `${i === 0 ? "Past" : i === 1 ? "Present" : "Future"}: ${c}`).join("\n")}`
           }
         ],
-        response_format: { type: "json_object" },
         max_tokens: 2000,
       }),
     });
@@ -97,18 +96,25 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
+    console.log("OpenRouter response:", JSON.stringify(data));
     const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
-      return NextResponse.json({ error: "No content returned from AI" }, { status: 500 });
+      console.error("No content in response:", data);
+      return NextResponse.json({ error: "No content returned from AI", debug: JSON.stringify(data).slice(0, 500) }, { status: 500 });
     }
 
     let reading: TarotReading;
     try {
-      reading = JSON.parse(content);
+      let cleaned = content.trim();
+      if (!cleaned.startsWith('{')) {
+        const startIdx = cleaned.indexOf('{');
+        if (startIdx >= 0) cleaned = cleaned.substring(startIdx);
+      }
+      reading = JSON.parse(cleaned);
     } catch (parseError) {
       console.error("Failed to parse AI response:", content);
-      return NextResponse.json({ error: "Invalid AI response format" }, { status: 500 });
+      return NextResponse.json({ error: "Invalid AI response format", debug: content.slice(0, 500) }, { status: 500 });
     }
 
     return NextResponse.json({ reading });
