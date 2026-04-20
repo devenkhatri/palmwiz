@@ -274,7 +274,7 @@ export default function Home() {
     if (file) handleFile(file);
   };
 
-  const analyzePalm = () => {
+  const analyzePalm = async () => {
     if (!image) return;
 
     setIsProcessing(true);
@@ -282,21 +282,37 @@ export default function Home() {
 
     const interval = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 100) {
+        if (prev >= 90) {
           clearInterval(interval);
-          return 100;
+          return 90;
         }
-        return prev + Math.random() * 15;
+        return prev + Math.random() * 10;
       });
-    }, 200);
+    }, 300);
 
-    setTimeout(() => {
-      const seed = generateSeedFromImage(new File([], fileName));
-      const result = generateReading(seed);
-      setReading(result);
-      setIsProcessing(false);
+    try {
+      const response = await fetch("/api/palm-read", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ image, fileName }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to get reading");
+      }
+
+      setReading(data.reading);
       setProgress(100);
-    }, 3500);
+    } catch (error) {
+      console.error("Palm reading error:", error);
+      alert("Failed to read palm. Please try again.");
+      setIsProcessing(false);
+      setProgress(0);
+    }
   };
 
   const reset = () => {

@@ -15,14 +15,19 @@ A full-featured palmistry reading web app that accepts palm photos and generates
 - [x] Mystical dark theme with golden accents
 - [x] Animated floating particles background
 - [x] Detailed palm content covering all aspects of palmistry
+- [x] OpenRouter API integration for AI-powered readings
+- [x] API route at /api/palm-read using openrouter/free model
+- [x] Model configured in .env.local (OPENROUTER_MODEL)
 
 ## Current Structure
 
 | File/Directory | Purpose | Status |
 |----------------|---------|--------|
 | `src/app/page.tsx` | Main palmistry app | ✅ Complete |
+| `src/app/api/palm-read/route.ts` | AI palm reading API | ✅ Complete |
 | `src/app/layout.tsx` | Root layout | ✅ Ready |
 | `src/app/globals.css` | Mystical theme styles | ✅ Complete |
+| `.env.local` | OpenRouter config | ✅ Complete |
 | `SPEC.md` | App specification | ✅ Complete |
 
 ## Features Implemented
@@ -46,6 +51,7 @@ A full-featured palmistry reading web app that accepts palm photos and generates
 |------|---------|
 | Initial | Template created with base setup |
 | 2026-04-19 | PalmWis palmistry app completed |
+| 2026-04-20 | Added OpenRouter AI integration |
 
 ## Design
 
