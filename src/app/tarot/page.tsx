@@ -132,7 +132,6 @@ export default function TarotPage() {
           </Link>
           <nav className="flex items-center gap-2">
             <Link href="/" className="text-xs text-text-secondary hover:text-highlight transition-colors">Palm</Link>
-            <Link href="/numerology" className="text-xs text-text-secondary hover:text-highlight transition-colors">Numerology</Link>
           </nav>
         </div>
       </header>

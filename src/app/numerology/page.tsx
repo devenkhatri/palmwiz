@@ -110,7 +110,6 @@ export default function NumerologyPage() {
           </Link>
           <nav className="flex items-center gap-2">
             <Link href="/" className="text-xs text-text-secondary hover:text-highlight transition-colors">Palm</Link>
-            <Link href="/tarot" className="text-xs text-text-secondary hover:text-highlight transition-colors">Tarot</Link>
           </nav>
         </div>
       </header>
