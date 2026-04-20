@@ -16,13 +16,23 @@ type Reading = {
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { token } = await params;
+  const reading = await getReading(token);
+  const type = reading?.type || "palm";
+  const overview = reading?.overview?.slice(0, 100) || "Get your palm read";
+  const ogUrl = `/api/og?type=${type}&overview=${encodeURIComponent(overview)}`;
+  
   return {
     title: "Palm Reading — PalmWis",
-    description: `A palm reading shared from PalmWis. Token: ${token}`,
+    description: `A ${type} palm reading shared from PalmWis`,
     openGraph: {
       title: "My PalmWis Palm Reading",
       description: "See what the ancient art of palmistry reveals about this person.",
       url: `https://palmwis.app/reading/${token}`,
+      images: [{ url: ogUrl, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: [ogUrl],
     },
   };
 }
