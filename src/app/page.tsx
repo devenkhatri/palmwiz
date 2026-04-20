@@ -414,6 +414,17 @@ export default function Home() {
         return;
       }
 
+      // Hand detection failed - return credit
+      if (response.status === 411) {
+        addToast(data.error || "Please upload a photo of your hand", "error");
+        setIsProcessing(false);
+        setProgress(0);
+        // Return the credit since we didn't use it
+        const refunded = { ...creditState, credits: creditState.credits + 1 };
+        setCreditState(refunded);
+        return;
+      }
+
       if (!response.ok || data.error) {
         throw new Error(data.error || "API unavailable");
       }
@@ -549,6 +560,7 @@ export default function Home() {
       {showPaywall && (
         <PaywallModal
           email={creditState.email}
+          credits={creditState.credits}
           onSuccess={handlePaymentSuccess}
           onClose={() => setShowPaywall(false)}
         />
@@ -604,8 +616,8 @@ export default function Home() {
           <div className="flex items-center gap-3">
             {/* Credit badge (Phase 3 #13) */}
             <div
-              onClick={() => creditState.credits === 0 ? setShowPaywall(true) : null}
-              className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-colors
+              onClick={() => setShowPaywall(true)}
+              className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-colors hover:scale-105
                 ${
                   creditState.credits === 0
                     ? "border-[#e94560]/60 bg-[#e94560]/10 text-[#e94560] hover:bg-[#e94560]/20"

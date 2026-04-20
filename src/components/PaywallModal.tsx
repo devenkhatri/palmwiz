@@ -4,6 +4,7 @@ import { useState } from "react";
 
 interface Props {
   email: string | null;
+  credits: number;
   onSuccess: (credits: number) => void;
   onClose: () => void;
 }
@@ -61,10 +62,13 @@ function loadScript(src: string): Promise<void> {
   });
 }
 
-export default function PaywallModal({ email, onSuccess, onClose }: Props) {
+export default function PaywallModal({ email, credits, onSuccess, onClose }: Props) {
   const [selected, setSelected] = useState<Plan>("credits");
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponSuccess, setCouponSuccess] = useState(false);
 
   const handlePay = async () => {
     setLoading(true);
@@ -131,6 +135,34 @@ export default function PaywallModal({ email, onSuccess, onClose }: Props) {
     }
   };
 
+  const handleCoupon = async () => {
+    if (!couponCode.trim()) {
+      setError("Please enter a coupon code");
+      return;
+    }
+    setCouponLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/coupon/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponCode.trim() }),
+      });
+      const data = await res.json();
+
+      if (data.valid && data.credits > 0) {
+        setCouponSuccess(true);
+        onSuccess(data.credits);
+      } else {
+        setError("Invalid coupon code");
+      }
+    } catch {
+      setError("Failed to validate coupon");
+    }
+    setCouponLoading(false);
+  };
+
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm no-print"
@@ -147,6 +179,11 @@ export default function PaywallModal({ email, onSuccess, onClose }: Props) {
           <p className="text-text-secondary text-sm">
             You&apos;ve used your free readings. Choose a plan to continue.
           </p>
+          {credits > 0 && (
+            <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border border-[#f5c518]/40 bg-[#f5c518]/10 text-[#f5c518]">
+              🔮 {credits} credit{credits !== 1 ? "s" : ""} remaining
+            </div>
+          )}
         </div>
 
         <div className="p-8 space-y-4">
@@ -175,6 +212,28 @@ export default function PaywallModal({ email, onSuccess, onClose }: Props) {
               <p className="text-red-400 text-xs">{error}</p>
             </div>
           )}
+
+          {/* Coupon input */}
+          <div className="border-t border-[#252545] pt-4">
+            <p className="text-xs text-text-secondary text-center mb-2">Have a coupon code?</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={e => { setCouponCode(e.target.value); setCouponSuccess(false); }}
+                placeholder="Enter coupon code"
+                className="flex-1 bg-[#16213e] border border-[#252545] rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-[#e94560] focus:outline-none"
+                disabled={couponLoading}
+              />
+              <button
+                onClick={handleCoupon}
+                disabled={couponLoading}
+                className="btn-secondary text-sm py-2 px-4 disabled:opacity-60"
+              >
+                {couponLoading ? "..." : "Apply"}
+              </button>
+            </div>
+          </div>
 
           <button
             onClick={handlePay}

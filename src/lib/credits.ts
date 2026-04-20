@@ -6,7 +6,7 @@ const CREDITS_KEY  = "palmwiz_credits";
 const EMAIL_KEY    = "palmwiz_email";
 const UNLOCKED_KEY = "palmwiz_unlocked";
 
-export const FREE_CREDITS_ANONYMOUS = 1;
+export const FREE_CREDITS_ANONYMOUS = 2;
 export const FREE_CREDITS_EMAIL     = 3;
 
 export interface CreditState {
@@ -60,4 +60,12 @@ export function unlockWithEmail(state: CreditState, email: string): CreditState 
   };
   saveCredits(next);
   return next;
+}
+
+export function validateCoupon(code: string): number | null {
+  if (!code) return null;
+  const upperCode = code.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const key = `COUPON_${upperCode}`;
+  const value = typeof process !== "undefined" ? (process.env as Record<string, string | undefined>)[key] : undefined;
+  return value ? parseInt(value, 10) : null;
 }

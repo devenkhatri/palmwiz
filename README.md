@@ -10,6 +10,19 @@ An ancient palmistry reading web app powered by AI. Upload your palm photo and d
 - **Mobile Camera**: Take photos directly on mobile devices
 - **AI-Powered Readings**: Uses OpenRouter AI to generate personalized palm readings
 - **Local Fallback Algorithm**: Classic reading algorithm when AI is unavailable
+- **Hand Detection**: Automatically verifies uploaded image is a hand/palm before analysis
+
+### Credit System
+
+| User Type | Free Credits |
+|----------|--------------|
+| Anonymous | 2 credits |
+| Email registered | 3 credits |
+| Coupon codes | Configurable via `.env` |
+
+- **Click-to-reveal**: Click the credit badge to see remaining credits and purchase more
+- **Coupon Support**: Redeem credits via coupon codes in `.env`
+- **Smart Refund**: Non-hand images are rejected without consuming credits
 
 ### Reading System (7 Tabs)
 
@@ -35,8 +48,7 @@ An ancient palmistry reading web app powered by AI. Upload your palm photo and d
 - **Compatibility Reading**: Compare two palms to see relationship compatibility
 - **Shareable Links**: Share your reading via unique URL
 - **PDF Export**: Save your reading as PDF
-- **Credit System**: Free credits for anonymous users, more with email
-- **Payment Integration**: Razorpay for purchasing credits
+- **Payment Integration**: Razorpay for purchasing credits + coupon redemption
 
 ## Setup
 
@@ -68,6 +80,9 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 # Optional: Razorpay for payments
 RAZORPAY_KEY_ID=your-razorpay-key-id
 RAZORPAY_KEY_SECRET=your-razorpay-key-secret
+
+# Optional: Coupon codes (format: COUPON_<CODE>=<credits>)
+# Example: COUPON_TEST5=5
 ```
 
 Get your free API key at https://openrouter.ai/

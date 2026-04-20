@@ -54,6 +54,49 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.OPENROUTER_API_KEY;
     const model = process.env.OPENROUTER_MODEL || "google/gemini-flash-1.5-8b";
 
+    // Step 1: Classify if image is a hand photo
+    const classifyRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": "https://palmwis.app",
+        "X-Title": "PalmWis - Hand Classification",
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          {
+            role: "system",
+            content: "You are an image classifier. Look at the image and determine if it shows a human hand/palm. Respond ONLY with exactly \"HAND\" if it shows a hand or palm, or \"NOT_HAND\" if it does not show a hand."
+          },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Is this a photo of a human hand or palm?" },
+              { type: "image_url", image_url: { url: image } }
+            ]
+          }
+        ],
+        max_tokens: 10,
+      }),
+    });
+
+    if (!classifyRes.ok) {
+      // If classification fails, allow through (fail open)
+      console.warn("Classification API failed, allowing through");
+    } else {
+      const classifyData = await classifyRes.json();
+      const classification = classifyData.choices?.[0]?.message?.content?.trim().toUpperCase();
+      
+      if (classification !== "HAND") {
+        return NextResponse.json(
+          { error: "Please upload a photo of your hand/palm. This image does not appear to be a hand." },
+          { status: 411 }
+        );
+      }
+    }
+
     if (!apiKey || apiKey === "your-api-key-here") {
       return NextResponse.json(
         { error: "OpenRouter API key not configured" },
