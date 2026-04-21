@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { loadCredits, consumeCredit, type CreditState } from "@/lib/credits";
 
@@ -25,6 +25,8 @@ export default function NumerologyPage() {
   const [reading, setReading] = useState<NumerologyReading | null>(null);
   const [creditState, setCreditState] = useState<CreditState>({ credits: 1, email: null, unlocked: false });
   const [error, setError] = useState("");
+
+  useEffect(() => { setCreditState(loadCredits()); }, []);
 
   const progressLabel =
     progress < 30 ? "Calculating your numbers..." :
@@ -108,8 +110,11 @@ export default function NumerologyPage() {
             <span className="text-2xl md:text-3xl">🔢</span>
             <h1 className="font-decorative text-lg md:text-xl text-highlight">PalmWis Numerology</h1>
           </Link>
-          <nav className="flex items-center gap-2">
-            <Link href="/" className="text-xs text-text-secondary hover:text-highlight transition-colors">Palm</Link>
+          <nav className="hidden sm:flex items-center gap-4">
+            <Link href="/" className="text-sm font-semibold text-text-secondary hover:text-highlight transition-colors">Palm</Link>
+            <Link href="/compatibility" className="text-sm font-semibold text-text-secondary hover:text-highlight transition-colors">Compatibility</Link>
+            <Link href="/tarot" className="text-sm font-semibold text-text-secondary hover:text-highlight transition-colors">Tarot</Link>
+            <Link href="/numerology" className="text-sm font-semibold text-highlight transition-colors">Numerology</Link>
           </nav>
         </div>
       </header>

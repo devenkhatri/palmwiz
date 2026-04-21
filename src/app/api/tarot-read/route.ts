@@ -14,14 +14,14 @@ The user has selected 3 tarot cards. Interpret them in the context of their posi
 
 Respond ONLY with valid JSON in this exact format (no additional text):
 {
-  "overview": "2-3 paragraph overview of the reading",
+  "overview": "A detailed 2-3 paragraph overview of the reading, summarizing the central theme of the cards drawn.",
   "cards": [
-    {"name": "Card Name", "position": "Past/Present/Future", "meaning": "What this card means in this position", "upright": "Upright meaning", "reversed": "Reversed meaning if applicable"}
+    {"name": "Card Name", "position": "Past/Present/Future", "meaning": "A fully detailed 4-5 sentence meaning of the card in this specific timeline position.", "upright": "A detailed explanation of its upright energy", "reversed": "A detailed explanation of its reversed energy if applicable"}
   ],
-  "interpretation": "How the cards work together",
-  "advice": "2-3 sentences of guidance",
-  "career": "2-3 sentences about career based on cards",
-  "love": "2-3 sentences about love based on cards"
+  "interpretation": "A sweeping 2-3 paragraph synthesis on how the past, present, and future cards interact to form a meaningful narrative.",
+  "advice": "A deeply thoughtful 1-2 paragraph section offering actionable spiritual guidance and practical advice.",
+  "career": "A comprehensive 1-2 paragraph deep dive into career, finances, and material success based on the spread.",
+  "love": "A comprehensive 1-2 paragraph deep dive into romantic and platonic relationships based on the spread."
 }`;
 
 const TAROT_DECK = [
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const apiKey = process.env.OPENROUTER_API_KEY;
-    const model = process.env.OPENROUTER_MODEL || "openrouter/free";
+    const model = process.env.OPENROUTER_MODEL || "google/gemini-flash-1.5-8b";
 
     if (!apiKey || apiKey === "your-api-key-here") {
       return NextResponse.json({ error: "OpenRouter API key not configured" }, { status: 500 });
@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
             content: `Please interpret these tarot cards:\n${cards.map((c: string, i: number) => `${i === 0 ? "Past" : i === 1 ? "Present" : "Future"}: ${c}`).join("\n")}`
           }
         ],
+        response_format: { type: "json_object" },
         max_tokens: 2000,
       }),
     });
@@ -107,9 +108,10 @@ export async function POST(request: NextRequest) {
     let reading: TarotReading;
     try {
       let cleaned = content.trim();
-      if (!cleaned.startsWith('{')) {
-        const startIdx = cleaned.indexOf('{');
-        if (startIdx >= 0) cleaned = cleaned.substring(startIdx);
+      cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (match) {
+        cleaned = match[0];
       }
       reading = JSON.parse(cleaned);
     } catch (parseError) {

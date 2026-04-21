@@ -252,13 +252,21 @@ export default function CompatibilityPage() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-[#1a1a2e] to-transparent py-4 px-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <a href="/" className="flex items-center gap-3">
-            <span className="text-2xl">🖐️</span>
-            <span className="font-decorative text-lg text-highlight">PalmWis</span>
+          <a href="/" className="flex items-center gap-2 md:gap-3">
+            <span className="text-2xl md:text-3xl">🖐️</span>
+            <span className="font-decorative text-lg md:text-xl text-highlight">PalmWis</span>
           </a>
-          {report && (
-            <button onClick={reset} className="btn-secondary text-sm py-2 px-4">Try Again</button>
-          )}
+          <div className="flex items-center gap-4">
+            <nav className="hidden sm:flex items-center gap-4">
+              <a href="/" className="text-sm font-semibold text-text-secondary hover:text-highlight transition-colors">Palm</a>
+              <a href="/compatibility" className="text-sm font-semibold text-highlight transition-colors">Compatibility</a>
+              <a href="/tarot" className="text-sm font-semibold text-text-secondary hover:text-highlight transition-colors">Tarot</a>
+              <a href="/numerology" className="text-sm font-semibold text-text-secondary hover:text-highlight transition-colors">Numerology</a>
+            </nav>
+            {report && (
+              <button onClick={reset} className="btn-secondary text-xs py-1.5 px-3 md:text-sm md:py-2 md:px-5">New</button>
+            )}
+          </div>
         </div>
       </header>
 

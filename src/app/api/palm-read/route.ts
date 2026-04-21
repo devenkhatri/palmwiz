@@ -15,28 +15,25 @@ const systemPrompt = `You are an expert palm reader with deep knowledge of chiro
 Analyze the palm image and provide a detailed reading.
 Respond ONLY with valid JSON in this exact format (no additional text):
 {
-  "type": "fire" | "earth" | "air" | "water",
-  "overview": "A 2-3 paragraph overview of the person's palm type and personality",
+  "type": "fire",
+  "overview": "A detailed 2-3 paragraph overview of the person's palm type, hand shape, and core personality traits.",
   "majorLines": [
-    {"title": "Life Line", "content": "Description of their Life Line", "meaning": "What this means for them"},
-    {"title": "Heart Line", "content": "Description of their Heart Line", "meaning": "What this means for them"},
-    {"title": "Head Line", "content": "Description of their Head Line", "meaning": "What this means for them"},
-    {"title": "Fate Line", "content": "Description of their Fate Line", "meaning": "What this means for them"}
+    {"title": "Life Line", "content": "Detailed physical description of the line in the image", "meaning": "A rich 3-4 sentence explanation of what this signifies for their vitality, life changes, and overall path"},
+    {"title": "Heart Line", "content": "Detailed physical description of the line in the image", "meaning": "A rich 3-4 sentence explanation of their emotional nature, romantic approach, and relationships"},
+    {"title": "Head Line", "content": "Detailed physical description of the line in the image", "meaning": "A rich 3-4 sentence explanation of their intellectual capacity, thought process, and beliefs"},
+    {"title": "Fate Line", "content": "Detailed physical description of the line in the image", "meaning": "A rich 3-4 sentence explanation of their career trajectory, luck, and life purpose"}
   ],
   "mounts": [
-    {"name": "Mount name", "content": "Description", "meaning": "What this means"},
-    {"name": "Mount name", "content": "Description", "meaning": "What this means"},
-    {"name": "Mount name", "content": "Description", "meaning": "What this means"}
+    {"name": "Mount name", "content": "Detailed physical description", "meaning": "A highly detailed interpretation of what this prominent mount reveals about their inner drivers"}
   ],
   "fingers": [
-    {"name": "Finger name", "content": "Description", "meaning": "What this means"},
-    {"name": "Finger name", "content": "Description", "meaning": "What this means"}
+    {"name": "Finger name", "content": "Detailed physical description", "meaning": "A highly detailed interpretation of what this finger structure reveals about their expression"}
   ],
   "signs": [
-    {"name": "Sign name", "content": "Description", "meaning": "What this means"}
+    {"name": "Sign name", "content": "Detailed physical description", "meaning": "A highly detailed interpretation of what this mark signifies for their destiny"}
   ],
-  "career": "2-3 sentences about career and success based on their palm",
-  "love": "2-3 sentences about love and relationships based on their palm"
+  "career": "A highly detailed 1-2 paragraph analysis of suitable career paths, their approach to work, business acumen, and professional milestones.",
+  "love": "A highly detailed 1-2 paragraph deep dive into their love life, emotional needs, compatibility, and relationship patterns."
 }`;
 
 export async function POST(request: NextRequest) {
@@ -53,6 +50,13 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.OPENROUTER_API_KEY;
     const model = process.env.OPENROUTER_MODEL || "google/gemini-flash-1.5-8b";
+
+    if (!apiKey || apiKey === "your-api-key-here") {
+      return NextResponse.json(
+        { error: "OpenRouter API key not configured" },
+        { status: 500 }
+      );
+    }
 
     // Step 1: Classify if image is a hand photo
     const classifyRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -95,13 +99,6 @@ export async function POST(request: NextRequest) {
           { status: 411 }
         );
       }
-    }
-
-    if (!apiKey || apiKey === "your-api-key-here") {
-      return NextResponse.json(
-        { error: "OpenRouter API key not configured" },
-        { status: 500 }
-      );
     }
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -161,7 +158,13 @@ export async function POST(request: NextRequest) {
 
     let reading: PalmReading;
     try {
-      reading = JSON.parse(content);
+      let cleaned = content.trim();
+      cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (match) {
+        cleaned = match[0];
+      }
+      reading = JSON.parse(cleaned);
     } catch (parseError) {
       console.error("Failed to parse AI response:", content);
       return NextResponse.json(

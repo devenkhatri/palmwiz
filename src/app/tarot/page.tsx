@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { loadCredits, consumeCredit, addCredits, type CreditState } from "@/lib/credits";
+import { loadCredits, consumeCredit, type CreditState } from "@/lib/credits";
 
 const TAROT_CARDS = [
   { name: "The Fool", emoji: "🤡" },
@@ -45,6 +45,8 @@ export default function TarotPage() {
   const [reading, setReading] = useState<TarotReading | null>(null);
   const [creditState, setCreditState] = useState<CreditState>({ credits: 1, email: null, unlocked: false });
   const [error, setError] = useState("");
+
+  useEffect(() => { setCreditState(loadCredits()); }, []);
 
   const progressLabel =
     progress < 30 ? "Shuffling the deck..." :
@@ -130,8 +132,11 @@ export default function TarotPage() {
             <span className="text-2xl md:text-3xl">🃏</span>
             <h1 className="font-decorative text-lg md:text-xl text-highlight">PalmWis Tarot</h1>
           </Link>
-          <nav className="flex items-center gap-2">
-            <Link href="/" className="text-xs text-text-secondary hover:text-highlight transition-colors">Palm</Link>
+          <nav className="hidden sm:flex items-center gap-4">
+            <Link href="/" className="text-sm font-semibold text-text-secondary hover:text-highlight transition-colors">Palm</Link>
+            <Link href="/compatibility" className="text-sm font-semibold text-text-secondary hover:text-highlight transition-colors">Compatibility</Link>
+            <Link href="/tarot" className="text-sm font-semibold text-highlight transition-colors">Tarot</Link>
+            <Link href="/numerology" className="text-sm font-semibold text-text-secondary hover:text-highlight transition-colors">Numerology</Link>
           </nav>
         </div>
       </header>

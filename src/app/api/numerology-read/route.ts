@@ -67,15 +67,15 @@ Analyze the name and date of birth to determine Life Path, Expression, and Soul 
 
 Respond ONLY with valid JSON in this exact format (no additional text):
 {
-  "overview": "2-3 paragraph overview of the numerology reading",
-  "lifePath": {"number": 1-9, "meaning": "What this life path means"},
-  "expression": {"number": 1-9, "meaning": "What this expression number means"},
-  "soulUrge": {"number": 1-9, "meaning": "What this soul urge number means"},
-  "personalYear": {"number": 1-9, "year": 2026, "meaning": "What this personal year means"},
-  "destiny": "2-3 sentences about destiny",
-  "career": "2-3 sentences about career",
-  "love": "2-3 sentences about love",
-  "advice": "2-3 sentences of guidance"
+  "overview": "A detailed 2-3 paragraph overview of the numerology reading, highlighting their core personality and journey.",
+  "lifePath": {"number": 1-9, "meaning": "A deeply detailed 3-4 sentence explanation of their life path, encompassing strengths and life lessons."},
+  "expression": {"number": 1-9, "meaning": "A deeply detailed 3-4 sentence explanation of their expression number, covering talents and outward goals."},
+  "soulUrge": {"number": 1-9, "meaning": "A deeply detailed 3-4 sentence explanation of their soul urge, focusing on secret desires and emotional needs."},
+  "personalYear": {"number": 1-9, "year": 2026, "meaning": "A deeply detailed 3-4 sentence explanation of what this personal year holds for them."},
+  "destiny": "A highly detailed 1-2 paragraph description of their overarching destiny and potential impact.",
+  "career": "A highly detailed 1-2 paragraph analysis of suitable career paths, work environment, and professional growth.",
+  "love": "A highly detailed 1-2 paragraph analysis of their romantic compatibility, relationship needs, and emotional style.",
+  "advice": "A meaningful 3-4 sentence paragraph of guidance and spiritual advice for their current life stage."
 }`;
 
 export async function POST(request: NextRequest) {
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     const personalYear = calculatePersonalYear(dob, year);
 
     const apiKey = process.env.OPENROUTER_API_KEY;
-    const model = process.env.OPENROUTER_MODEL || "openrouter/free";
+    const model = process.env.OPENROUTER_MODEL || "google/gemini-flash-1.5-8b";
 
     if (!apiKey || apiKey === "your-api-key-here") {
       return NextResponse.json({ error: "OpenRouter API key not configured" }, { status: 500 });
@@ -124,6 +124,7 @@ export async function POST(request: NextRequest) {
             content: `Please interpret this numerology reading:\nName: ${name}\nDate of Birth: ${dob}\nLife Path Number: ${lifePath}\nExpression Number: ${expression}\nSoul Urge Number: ${soulUrge}\nPersonal Year ${year}: ${personalYear}`
           }
         ],
+        response_format: { type: "json_object" },
         max_tokens: 2000,
       }),
     });
@@ -144,9 +145,10 @@ export async function POST(request: NextRequest) {
     let reading: NumerologyReading;
     try {
       let cleaned = content.trim();
-      if (!cleaned.startsWith('{')) {
-        const startIdx = cleaned.indexOf('{');
-        if (startIdx >= 0) cleaned = cleaned.substring(startIdx);
+      cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (match) {
+        cleaned = match[0];
       }
       reading = JSON.parse(cleaned);
     } catch (parseError) {

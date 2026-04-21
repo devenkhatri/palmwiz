@@ -624,25 +624,31 @@ export default function Home() {
             <span className="text-2xl md:text-3xl">🖐️</span>
             <h1 className="font-decorative text-lg md:text-xl text-highlight">PalmWis</h1>
           </div>
-          <div className="flex items-center gap-2 md:gap-3">
-            {/* Credit badge - smaller on mobile */}
-            <div
-              onClick={() => setShowPaywall(true)}
-              className={`flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 rounded-full text-xs font-semibold border cursor-pointer transition-all hover:scale-105 active:scale-95
-                ${
-                  creditState.credits === 0
-                    ? "border-[#e94560]/60 bg-[#e94560]/10 text-[#e94560] hover:bg-[#e94560]/20"
-                    : "border-[#f5c518]/40 bg-[#f5c518]/10 text-[#f5c518]"
-                }`}
-            >
-              <span className="hidden md:inline">🔮</span>
-              <span className="md:hidden">🔮</span>
-              <span className="text-[10px] md:text-xs">{creditState.credits >= 999 ? "∞" : `${creditState.credits}`}</span>
+          <div className="flex items-center gap-4">
+            <nav className="hidden sm:flex items-center gap-4">
+              <Link href="/compatibility" className="text-sm font-semibold text-text-secondary hover:text-highlight transition-colors">Compatibility</Link>
+              <Link href="/tarot" className="text-sm font-semibold text-text-secondary hover:text-highlight transition-colors">Tarot</Link>
+              <Link href="/numerology" className="text-sm font-semibold text-text-secondary hover:text-highlight transition-colors">Numerology</Link>
+            </nav>
+            <div className="flex items-center gap-2 md:gap-3">
+              {/* Credit badge - smaller on mobile */}
+              <div
+                onClick={() => setShowPaywall(true)}
+                className={`flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 rounded-full text-xs font-semibold border cursor-pointer transition-all hover:scale-105 active:scale-95
+                  ${
+                    creditState.credits === 0
+                      ? "border-[#e94560]/60 bg-[#e94560]/10 text-[#e94560] hover:bg-[#e94560]/20"
+                      : "border-[#f5c518]/40 bg-[#f5c518]/10 text-[#f5c518]"
+                  }`}
+              >
+                <span className="hidden md:inline">🔮</span>
+                <span className="md:hidden">🔮</span>
+                <span className="text-[10px] md:text-xs">{creditState.credits >= 999 ? "∞" : `${creditState.credits}`}</span>
+              </div>
+              {reading && !isProcessing && (
+                <button onClick={reset} className="btn-secondary text-xs py-1.5 px-3 md:text-sm md:py-2 md:px-5">New</button>
+              )}
             </div>
-            {reading && !isProcessing && (
-              <button onClick={reset} className="btn-secondary text-xs py-1.5 px-3 md:text-sm md:py-2 md:px-5">New</button>
-            )}
-            
           </div>
         </div>
       </header>
@@ -664,20 +670,30 @@ export default function Home() {
             <button onClick={scrollToUpload} className="btn-primary text-base md:text-lg">
               Read My Palm
             </button>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
               <a
                 href="/compatibility"
                 className="btn-secondary text-sm flex items-center justify-center gap-2"
               >
-                <span className="md:hidden">💞</span>
-                <span>Compatibility</span>
+                <span>💞 Compatibility</span>
+              </a>
+              <a
+                href="/tarot"
+                className="btn-secondary text-sm flex items-center justify-center gap-2"
+              >
+                <span>🃏 Tarot</span>
+              </a>
+              <a
+                href="/numerology"
+                className="btn-secondary text-sm flex items-center justify-center gap-2"
+              >
+                <span>🔢 Numerology</span>
               </a>
               <button
                 onClick={() => setShowPhotoGuide(true)}
                 className="btn-secondary text-sm flex items-center justify-center gap-2"
               >
-                <span className="md:hidden">📸</span>
-                <span>Photo Tips</span>
+                <span>📸 Photo Tips</span>
               </button>
             </div>
           </div>
